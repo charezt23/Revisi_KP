@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/models/anggota_model.dart';
+import 'package:flutter_application_1/API/KunjunganBalitaService.dart';
+import 'package:flutter_application_1/models/balitaModel.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
 import 'package:intl/intl.dart';
 
 class KunjunganFormScreen extends StatefulWidget {
-  final Anggota anggota;
+  final BalitaModel balita;
 
-  const KunjunganFormScreen({super.key, required this.anggota});
+  const KunjunganFormScreen({super.key, required this.balita});
 
   @override
   State<KunjunganFormScreen> createState() => _KunjunganFormScreenState();
@@ -14,8 +15,30 @@ class KunjunganFormScreen extends StatefulWidget {
 
 class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _kunjunganService = Kunjunganbalitaservice();
+
   final _tanggalController = TextEditingController();
-  final _penyebabController = TextEditingController();
+  final _beratBadanController = TextEditingController();
+  final _tinggiBadanController = TextEditingController();
+
+  DateTime _selectedDate = DateTime.now();
+
+  // State untuk Radio Button
+  String? _selectedStatusGizi;
+  final Map<String, String> _statusGiziOptions = {
+    'N': 'Normal',
+    'K': 'Kurang',
+    'T': 'Tinggi/Obesitas',
+  };
+
+  String? _selectedRambuGizi;
+  final List<String> _rambuGiziOptions = ['O', 'N1', 'N2', 'T1', 'T2', 'T3'];
+
+  @override
+  void initState() {
+    super.initState();
+    _tanggalController.text = DateFormat('dd-MM-yyyy').format(_selectedDate);
+  }
 
   Future<void> _pilihTanggal() async {
     DateTime? picked = await showDatePicker(
@@ -23,34 +46,56 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
+      locale: const Locale('id', 'ID'),
     );
     if (picked != null) {
       setState(() {
+        _selectedDate = picked;
         _tanggalController.text = DateFormat('dd-MM-yyyy').format(picked);
       });
     }
   }
 
-  void _simpanPemeriksaan() {
+  void _simpanPemeriksaan() async {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implementasikan logika penyimpanan data kunjungan ke database.
+      try {
+        await _kunjunganService.CreateKunjunganBalita(
+          widget.balita.id!,
+          _selectedDate,
+          double.parse(_beratBadanController.text.replaceAll(',', '.')),
+          double.parse(_tinggiBadanController.text.replaceAll(',', '.')),
+          _selectedStatusGizi!,
+          _selectedRambuGizi!,
+        );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Kunjungan untuk ${widget.anggota.nama} berhasil dicatat.',
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Kunjungan untuk ${widget.balita.nama} berhasil dicatat.',
+            ),
+            backgroundColor: Colors.green,
           ),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.of(context).pop();
+        );
+        Navigator.of(context).pop();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   @override
   void dispose() {
     _tanggalController.dispose();
-    _penyebabController.dispose();
+    _beratBadanController.dispose();
+    _tinggiBadanController.dispose();
     super.dispose();
   }
 
@@ -58,7 +103,7 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Form Kunjungan'),
+        title: const Text('Form Kunjungan Balita'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -86,7 +131,7 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Anggota: ${widget.anggota.nama}',
+                          'Balita: ${widget.balita.nama}',
                           style: Theme.of(context).textTheme.titleMedium,
                           textAlign: TextAlign.center,
                         ),
@@ -109,13 +154,200 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _penyebabController,
+                          controller: _beratBadanController,
                           decoration: const InputDecoration(
-                            labelText: 'Penyebab/Keluhan Kunjungan',
+                            labelText: 'Berat Badan (kg)',
                             border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.notes_outlined),
+                            prefixIcon: Icon(Icons.monitor_weight_outlined),
                           ),
-                          maxLines: 3,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Berat badan tidak boleh kosong';
+                            }
+                            if (double.tryParse(value.replaceAll(',', '.')) ==
+                                null) {
+                              return 'Masukkan angka yang valid';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _tinggiBadanController,
+                          decoration: const InputDecoration(
+                            labelText: 'Tinggi Badan (cm)',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.height_outlined),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Tinggi badan tidak boleh kosong';
+                            }
+                            if (double.tryParse(value.replaceAll(',', '.')) ==
+                                null) {
+                              return 'Masukkan angka yang valid';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        // --- Radio Button untuk Status Gizi ---
+                        FormField<String>(
+                          validator: (value) {
+                            if (_selectedStatusGizi == null) {
+                              return 'Status gizi harus dipilih.';
+                            }
+                            return null;
+                          },
+                          builder:
+                              (state) => Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Status Gizi',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  Row(
+                                    children:
+                                        _statusGiziOptions.entries.map((entry) {
+                                          return Expanded(
+                                            child: RadioListTile<String>(
+                                              title: Text(entry.value),
+                                              value: entry.key,
+                                              groupValue: _selectedStatusGizi,
+                                              onChanged: (value) {
+                                                setState(
+                                                  () =>
+                                                      _selectedStatusGizi =
+                                                          value,
+                                                );
+                                                state.didChange(value);
+                                              },
+                                              contentPadding: EdgeInsets.zero,
+                                            ),
+                                          );
+                                        }).toList(),
+                                  ),
+                                  if (state.hasError)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 12.0,
+                                      ),
+                                      child: Text(
+                                        state.errorText!,
+                                        style: TextStyle(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.error,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                        ),
+                        const SizedBox(height: 16),
+                        // --- Radio Button untuk Rambu Gizi ---
+                        FormField<String>(
+                          validator: (value) {
+                            if (_selectedRambuGizi == null) {
+                              return 'Rambu gizi harus dipilih.';
+                            }
+                            return null;
+                          },
+                          builder:
+                              (state) => Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Rambu Gizi',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  Column(
+                                    children: [
+                                      Row(
+                                        children:
+                                            _rambuGiziOptions
+                                                .sublist(0, 3)
+                                                .map(
+                                                  (option) => Expanded(
+                                                    child: RadioListTile<
+                                                      String
+                                                    >(
+                                                      title: Text(option),
+                                                      value: option,
+                                                      groupValue:
+                                                          _selectedRambuGizi,
+                                                      onChanged: (value) {
+                                                        setState(
+                                                          () =>
+                                                              _selectedRambuGizi =
+                                                                  value,
+                                                        );
+                                                        state.didChange(value);
+                                                      },
+                                                      contentPadding:
+                                                          EdgeInsets.zero,
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList(),
+                                      ),
+                                      Row(
+                                        children:
+                                            _rambuGiziOptions
+                                                .sublist(3, 6)
+                                                .map(
+                                                  (option) => Expanded(
+                                                    child: RadioListTile<
+                                                      String
+                                                    >(
+                                                      title: Text(option),
+                                                      value: option,
+                                                      groupValue:
+                                                          _selectedRambuGizi,
+                                                      onChanged: (value) {
+                                                        setState(
+                                                          () =>
+                                                              _selectedRambuGizi =
+                                                                  value,
+                                                        );
+                                                        state.didChange(value);
+                                                      },
+                                                      contentPadding:
+                                                          EdgeInsets.zero,
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList(),
+                                      ),
+                                    ],
+                                  ),
+                                  if (state.hasError)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 12.0,
+                                      ),
+                                      child: Text(
+                                        state.errorText!,
+                                        style: TextStyle(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.error,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(

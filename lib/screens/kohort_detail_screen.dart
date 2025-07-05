@@ -3,11 +3,9 @@ import 'package:flutter_application_1/API/BalitaService.dart'; // Menggunakan se
 import 'package:flutter_application_1/models/posyanduModel.dart'; // Menggunakan model Posyandu
 import 'package:flutter_application_1/models/balitaModel.dart';
 import 'package:flutter_application_1/screens/Pemeriksaan/KematianFormScreen.dart';
+import 'package:flutter_application_1/screens/Pemeriksaan/KunjunganFormScreen.dart';
 import 'package:flutter_application_1/screens/anggota_form_screen.dart';
 import 'package:flutter_application_1/screens/pemeriksaan/imunisasi_form_screen.dart';
-import 'package:flutter_application_1/screens/pemeriksaan/pemeriksaan_list_screen.dart';
-import 'package:flutter_application_1/screens/anggota_detail_screen.dart';
-
 import 'package:flutter_application_1/widgets/login_background.dart';
 
 // TODO: Hapus import ini setelah semua screen pemeriksaan diubah ke BalitaModel
@@ -151,8 +149,8 @@ class _KohortDetailScreenState extends State<KohortDetailScreen> {
         nextPage = ImunisasiFormScreen(anggota: anggotaDummy);
         break;
       case JenisPemeriksaan.kunjungan:
-        // Mengarahkan ke halaman daftar pemeriksaan umum
-        nextPage = PemeriksaanListScreen(anggota: anggotaDummy);
+        // Mengarahkan ke halaman form kunjungan balita
+        nextPage = KunjunganFormScreen(balita: balita);
         break;
       case JenisPemeriksaan.kematian:
         nextPage = KematianFormScreen(anggota: anggotaDummy);

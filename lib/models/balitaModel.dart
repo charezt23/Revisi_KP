@@ -1,3 +1,5 @@
+import 'package:flutter_application_1/models/posyanduModel.dart';
+
 class BalitaModel {
   int? id;
   String nama;
@@ -7,6 +9,8 @@ class BalitaModel {
   String jenisKelamin;
   int posyanduId;
   String bukuKIA;
+  PosyanduModel? posyandu; // Added PosyanduModel
+
   BalitaModel({
     this.id,
     required this.nama,
@@ -16,6 +20,7 @@ class BalitaModel {
     required this.jenisKelamin,
     required this.posyanduId,
     required this.bukuKIA,
+    this.posyandu,
   });
 
   BalitaModel.fromJson(Map<String, dynamic> json)
@@ -26,7 +31,12 @@ class BalitaModel {
       alamat = json['alamat'],
       jenisKelamin = json['jenis_kelamin'],
       posyanduId = json['posyandu_id'],
-      bukuKIA = json['buku_kia'];
+      bukuKIA = json['Buku_KIA'], // Corrected key to 'Buku_KIA'
+      posyandu =
+          json['posyandu'] != null
+              ? PosyanduModel.fromJson(json['posyandu'])
+              : null;
+
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
@@ -36,7 +46,10 @@ class BalitaModel {
     data['alamat'] = alamat;
     data['jenis_kelamin'] = jenisKelamin;
     data['posyandu_id'] = posyanduId;
-    data['buku_kia'] = bukuKIA;
+    data['Buku_KIA'] = bukuKIA; // Corrected key to 'Buku_KIA'
+    if (posyandu != null) {
+      data['posyandu'] = posyandu!.toJson();
+    }
     return data;
   }
 }

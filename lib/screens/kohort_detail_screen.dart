@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/databse/dummy_data_service.dart';
 import 'package:flutter_application_1/models/anggota_model.dart';
 import 'package:flutter_application_1/models/kohort_model.dart';
+import 'package:flutter_application_1/screens/Pemeriksaaan/KematianFormScreen.dart';
+import 'package:flutter_application_1/screens/Pemeriksaaan/KunjunganFormScreen.dart';
 import 'package:flutter_application_1/screens/Pemeriksaaan/imunisasi_form_screen.dart';
 
 import 'package:flutter_application_1/screens/anggota_detail_screen.dart';
@@ -129,6 +131,28 @@ class _KohortDetailScreenState extends State<KohortDetailScreen> {
         MaterialPageRoute(
           builder: (_) => ImunisasiFormScreen(anggota: anggota),
         ),
+      ).then((_) => _updateAnggotaList());
+      return; // Hentikan eksekusi fungsi setelah navigasi
+    }
+    if (jenisTerpilih == JenisPemeriksaan.kunjungan) {
+      if (!mounted) return;
+      // Navigasi ke ImunisasiFormScreen dan tunggu hasilnya.
+      // Setelah kembali, panggil _updateAnggotaList untuk refresh data.
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => KunjunganFormScreen(anggota: anggota),
+        ),
+      ).then((_) => _updateAnggotaList());
+      return; // Hentikan eksekusi fungsi setelah navigasi
+    }
+    if (jenisTerpilih == JenisPemeriksaan.kematian) {
+      if (!mounted) return;
+      // Navigasi ke ImunisasiFormScreen dan tunggu hasilnya.
+      // Setelah kembali, panggil _updateAnggotaList untuk refresh data.
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => KematianFormScreen(anggota: anggota)),
       ).then((_) => _updateAnggotaList());
       return; // Hentikan eksekusi fungsi setelah navigasi
     }

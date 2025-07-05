@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/databse/dummy_data_service.dart';
 import 'package:flutter_application_1/models/anggota_model.dart';
 import 'package:flutter_application_1/models/kohort_model.dart';
+import 'package:flutter_application_1/screens/Pemeriksaaan/imunisasi_form_screen.dart';
 
 import 'package:flutter_application_1/screens/anggota_detail_screen.dart';
 import 'package:flutter_application_1/screens/anggota_form_screen.dart';
@@ -116,13 +117,26 @@ class _KohortDetailScreenState extends State<KohortDetailScreen> {
       },
     );
 
-    if (jenisTerpilih != null && mounted) {
-      String pesan;
+    if (jenisTerpilih == null) return; // Keluar jika pengguna tidak memilih
+
+    // Jika pengguna memilih Imunisasi, navigasi ke form baru
+    if (jenisTerpilih == JenisPemeriksaan.imunisasi) {
+      if (!mounted) return;
+      // Navigasi ke ImunisasiFormScreen dan tunggu hasilnya.
+      // Setelah kembali, panggil _updateAnggotaList untuk refresh data.
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ImunisasiFormScreen(anggota: anggota),
+        ),
+      ).then((_) => _updateAnggotaList());
+      return; // Hentikan eksekusi fungsi setelah navigasi
+    }
+
+    // Untuk pilihan lain, tetap tampilkan SnackBar sebagai placeholder
+    if (mounted) {
+      String pesan = '';
       switch (jenisTerpilih) {
-        case JenisPemeriksaan.imunisasi:
-          pesan = 'Membuka form Imunisasi untuk ${anggota.nama}...';
-          // TODO: Navigasi ke halaman form Imunisasi
-          break;
         case JenisPemeriksaan.kunjungan:
           pesan = 'Membuka form Kunjungan untuk ${anggota.nama}...';
           // TODO: Navigasi ke halaman form Kunjungan
@@ -130,6 +144,9 @@ class _KohortDetailScreenState extends State<KohortDetailScreen> {
         case JenisPemeriksaan.kematian:
           pesan = 'Membuka form Kematian untuk ${anggota.nama}...';
           // TODO: Navigasi ke halaman form Kematian
+          break;
+        case JenisPemeriksaan.imunisasi:
+          // Sudah ditangani di atas, tidak akan pernah sampai sini.
           break;
       }
       ScaffoldMessenger.of(context).showSnackBar(

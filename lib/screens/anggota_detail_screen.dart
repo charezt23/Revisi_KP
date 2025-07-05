@@ -8,7 +8,11 @@ import 'package:flutter_application_1/screens/catatan_kesehatan_form_screen.dart
 
 class AnggotaDetailScreen extends StatefulWidget {
   final Anggota anggota;
-  const AnggotaDetailScreen({super.key, required this.anggota});
+  const AnggotaDetailScreen({
+    super.key,
+    required this.anggota,
+    required posyanduId,
+  });
 
   @override
   State<AnggotaDetailScreen> createState() => _AnggotaDetailScreenState();
@@ -170,9 +174,8 @@ class _AnggotaDetailScreenState extends State<AnggotaDetailScreen> {
                 return const Center(child: Text('Gagal memuat data.'));
               }
               final riwayat = snapshot.data!;
-              final pemeriksaanTerbaru = riwayat.isNotEmpty
-                  ? riwayat.first
-                  : null;
+              final pemeriksaanTerbaru =
+                  riwayat.isNotEmpty ? riwayat.first : null;
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
@@ -192,13 +195,14 @@ class _AnggotaDetailScreenState extends State<AnggotaDetailScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                PemeriksaanFormScreen(anggotaId: widget.anggota.id!),
-          ),
-        ).then((_) => _updateRiwayatPemeriksaan()),
+        onPressed:
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => PemeriksaanFormScreen(anggotaId: widget.anggota.id!),
+              ),
+            ).then((_) => _updateRiwayatPemeriksaan()),
         tooltip: 'Tambah Pemeriksaan',
         child: const Icon(Icons.add_chart),
       ),

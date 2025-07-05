@@ -59,29 +59,30 @@ class Balitaservice {
     }
   }
 
-  GetBalitaByPosyandu(id) async {
+  Future<List<BalitaModel>> GetBalitaByPosyandu(id) async {
     try {
-      var request = http.Request(
-        'GET',
-        Uri.parse(base_url + '/balita/posyandu/${id}'),
-      );
-      http.StreamedResponse response = await request.send();
+      final response = await http
+          .get(Uri.parse(base_url + '/balita/posyandu/${id}'))
+          .timeout(const Duration(seconds: 10));
+
       if (response.statusCode == 200) {
         print('Response status: ${response.statusCode}');
-        var responseData = await response.stream.bytesToString();
-        Map<String, dynamic> responDecode = json.decode(responseData);
+        Map<String, dynamic> responDecode = json.decode(response.body);
         List<dynamic> data = responDecode['data'];
         print("Data: $data");
-        BalitaList.clear();
-        for (var item in data) {
-          BalitaList.add(BalitaModel.fromJson(item));
-        }
+
+        // Buat list dari data response dan kembalikan
+        List<BalitaModel> balitaList =
+            data.map((item) => BalitaModel.fromJson(item)).toList();
+        return balitaList;
       } else {
         print('Error: ${response.reasonPhrase}');
-        return null;
+        throw Exception('Gagal memuat data balita: ${response.reasonPhrase}');
       }
     } catch (e) {
       print(e);
+      // Lempar kembali exception agar bisa ditangani oleh FutureBuilder
+      throw Exception('Gagal memuat data balita: $e');
     }
   }
 

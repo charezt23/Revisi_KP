@@ -49,7 +49,7 @@ class _PemeriksaanFormScreenState extends State<PemeriksaanFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tambah Pemeriksaan')),
+      appBar: AppBar(title: const Text('Kunjungan')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -77,8 +77,8 @@ class _PemeriksaanFormScreenState extends State<PemeriksaanFormScreen> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                validator: (value) =>
-                    value!.isEmpty ? 'Tidak boleh kosong' : null,
+                validator:
+                    (value) => value!.isEmpty ? 'Tidak boleh kosong' : null,
               ),
               TextFormField(
                 controller: _tbController,
@@ -88,8 +88,8 @@ class _PemeriksaanFormScreenState extends State<PemeriksaanFormScreen> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                validator: (value) =>
-                    value!.isEmpty ? 'Tidak boleh kosong' : null,
+                validator:
+                    (value) => value!.isEmpty ? 'Tidak boleh kosong' : null,
               ),
               TextFormField(
                 controller: _ketController,

@@ -1,5 +1,6 @@
 import 'package:flutter_application_1/models/anggota_model.dart';
 import 'package:flutter_application_1/models/kohort_model.dart';
+import 'package:flutter_application_1/models/kunjungan_model.dart';
 import '../models/pemeriksaan_model.dart';
 
 // Menggunakan pola Singleton agar state (data dummy) konsisten di seluruh aplikasi.
@@ -119,6 +120,22 @@ class DummyDataService {
     ),
   ];
 
+  final List<Kunjungan> _dummyKunjungan = [
+    // Data untuk Budi Santoso (anggotaId: 1)
+    Kunjungan(
+      id: 1,
+      anggotaId: 1,
+      tanggalKunjungan: DateTime(2024, 6, 1),
+      penyebab: 'Kontrol rutin bulanan',
+    ),
+    Kunjungan(
+      id: 2,
+      anggotaId: 1,
+      tanggalKunjungan: DateTime(2024, 6, 20),
+      penyebab: 'Demam ringan setelah imunisasi',
+    ),
+  ];
+
   // --- METHOD YANG MENIRU DATABASEHELPER ---
   // --- FUNGSI UNTUK KOHORT ---
   Future<List<Kohort>> getKohortList() async {
@@ -165,6 +182,8 @@ class DummyDataService {
     await Future.delayed(const Duration(milliseconds: 300));
     // Hapus juga data pemeriksaan yang terkait untuk menjaga integritas data
     _dummyPemeriksaan.removeWhere((p) => p.anggotaId == id);
+    // Hapus juga data kunjungan yang terkait
+    _dummyKunjungan.removeWhere((k) => k.anggotaId == id);
     _dummyAnggota.removeWhere((a) => a.id == id);
     print('DUMMY: Menghapus anggota dengan id -> $id');
   }
@@ -172,9 +191,8 @@ class DummyDataService {
   // --- FUNGSI UNTUK PEMERIKSAAN ---
   Future<List<Pemeriksaan>> getPemeriksaanList(int anggotaId) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    final results = _dummyPemeriksaan
-        .where((p) => p.anggotaId == anggotaId)
-        .toList();
+    final results =
+        _dummyPemeriksaan.where((p) => p.anggotaId == anggotaId).toList();
     // Urutkan dari yang terbaru
     results.sort(
       (a, b) => b.tanggalPemeriksaan.compareTo(a.tanggalPemeriksaan),
@@ -187,14 +205,38 @@ class DummyDataService {
     final newId =
         (_dummyPemeriksaan.isNotEmpty
             ? _dummyPemeriksaan
-                  .map((p) => p.id!)
-                  .reduce((a, b) => a > b ? a : b)
+                .map((p) => p.id!)
+                .reduce((a, b) => a > b ? a : b)
             : 0) +
         1;
     pemeriksaan.id = newId;
     _dummyPemeriksaan.add(pemeriksaan);
     print(
       'DUMMY: Menambahkan pemeriksaan baru untuk anggotaId -> ${pemeriksaan.anggotaId}',
+    );
+  }
+
+  // --- FUNGSI UNTUK KUNJUNGAN ---
+  Future<List<Kunjungan>> getKunjunganList(int anggotaId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final results =
+        _dummyKunjungan.where((k) => k.anggotaId == anggotaId).toList();
+    // Urutkan dari yang terbaru
+    results.sort((a, b) => b.tanggalKunjungan.compareTo(a.tanggalKunjungan));
+    return results;
+  }
+
+  Future<void> insertKunjungan(Kunjungan kunjungan) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final newId =
+        (_dummyKunjungan.isNotEmpty
+            ? _dummyKunjungan.map((k) => k.id!).reduce((a, b) => a > b ? a : b)
+            : 0) +
+        1;
+    kunjungan.id = newId;
+    _dummyKunjungan.add(kunjungan);
+    print(
+      'DUMMY: Menambahkan kunjungan baru untuk anggotaId -> ${kunjungan.anggotaId}',
     );
   }
 }

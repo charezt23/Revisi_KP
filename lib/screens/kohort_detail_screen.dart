@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/databse/dummy_data_service.dart';
 import 'package:flutter_application_1/models/anggota_model.dart';
 import 'package:flutter_application_1/models/kohort_model.dart';
-import 'package:flutter_application_1/screens/Pemeriksaaan/KematianFormScreen.dart';
-import 'package:flutter_application_1/screens/Pemeriksaaan/KunjunganFormScreen.dart';
-import 'package:flutter_application_1/screens/Pemeriksaaan/imunisasi_form_screen.dart';
-
+import 'package:flutter_application_1/screens/Pemeriksaan/KematianFormScreen.dart';
+import 'package:flutter_application_1/screens/pemeriksaan/imunisasi_form_screen.dart';
+import 'package:flutter_application_1/screens/pemeriksaan/pemeriksaan_list_screen.dart';
 import 'package:flutter_application_1/screens/anggota_detail_screen.dart';
 import 'package:flutter_application_1/screens/anggota_form_screen.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
@@ -119,63 +118,27 @@ class _KohortDetailScreenState extends State<KohortDetailScreen> {
       },
     );
 
-    if (jenisTerpilih == null) return; // Keluar jika pengguna tidak memilih
+    if (jenisTerpilih == null || !mounted) return;
 
-    // Jika pengguna memilih Imunisasi, navigasi ke form baru
-    if (jenisTerpilih == JenisPemeriksaan.imunisasi) {
-      if (!mounted) return;
-      // Navigasi ke ImunisasiFormScreen dan tunggu hasilnya.
-      // Setelah kembali, panggil _updateAnggotaList untuk refresh data.
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ImunisasiFormScreen(anggota: anggota),
-        ),
-      ).then((_) => _updateAnggotaList());
-      return; // Hentikan eksekusi fungsi setelah navigasi
-    }
-    if (jenisTerpilih == JenisPemeriksaan.kunjungan) {
-      if (!mounted) return;
-      // Navigasi ke ImunisasiFormScreen dan tunggu hasilnya.
-      // Setelah kembali, panggil _updateAnggotaList untuk refresh data.
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => KunjunganFormScreen(anggota: anggota),
-        ),
-      ).then((_) => _updateAnggotaList());
-      return; // Hentikan eksekusi fungsi setelah navigasi
-    }
-    if (jenisTerpilih == JenisPemeriksaan.kematian) {
-      if (!mounted) return;
-      // Navigasi ke ImunisasiFormScreen dan tunggu hasilnya.
-      // Setelah kembali, panggil _updateAnggotaList untuk refresh data.
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => KematianFormScreen(anggota: anggota)),
-      ).then((_) => _updateAnggotaList());
-      return; // Hentikan eksekusi fungsi setelah navigasi
+    Widget? nextPage;
+    switch (jenisTerpilih) {
+      case JenisPemeriksaan.imunisasi:
+        nextPage = ImunisasiFormScreen(anggota: anggota);
+        break;
+      case JenisPemeriksaan.kunjungan:
+        // Mengarahkan ke halaman daftar pemeriksaan umum
+        nextPage = PemeriksaanListScreen(anggota: anggota);
+        break;
+      case JenisPemeriksaan.kematian:
+        nextPage = KematianFormScreen(anggota: anggota);
+        break;
     }
 
-    // Untuk pilihan lain, tetap tampilkan SnackBar sebagai placeholder
-    if (mounted) {
-      String pesan = '';
-      switch (jenisTerpilih) {
-        case JenisPemeriksaan.kunjungan:
-          pesan = 'Membuka form Kunjungan untuk ${anggota.nama}...';
-          // TODO: Navigasi ke halaman form Kunjungan
-          break;
-        case JenisPemeriksaan.kematian:
-          pesan = 'Membuka form Kematian untuk ${anggota.nama}...';
-          // TODO: Navigasi ke halaman form Kematian
-          break;
-        case JenisPemeriksaan.imunisasi:
-          // Sudah ditangani di atas, tidak akan pernah sampai sini.
-          break;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(pesan), backgroundColor: Colors.blue),
-      );
+    if (nextPage != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => nextPage!),
+      ).then((_) => _updateAnggotaList());
     }
   }
 

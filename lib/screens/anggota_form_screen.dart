@@ -23,7 +23,9 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
   DateTime _tanggalLahir = DateTime.now();
   String _jenisKelamin = 'Laki-laki'; // Default value
   final List<String> _jenisKelaminOptions = ['Laki-laki', 'Perempuan'];
-  final _bukuKIAController = TextEditingController();
+  final _namaIbuController = TextEditingController();
+  String _bukuKIAStatus = 'ada'; // Default value
+  final List<String> _bukuKIAOptions = ['ada', 'tidak_ada'];
 
   @override
   void initState() {
@@ -38,8 +40,12 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
       _tanggalLahirController = TextEditingController(
         text: _formatDate(widget.balita!.tanggalLahir),
       );
-      _jenisKelamin = widget.balita!.jenisKelamin;
-      _bukuKIAController.text = widget.balita!.bukuKIA;
+      // Konversi 'L'/'P' dari model ke teks yang bisa dibaca
+      _jenisKelamin =
+          widget.balita!.jenisKelamin == 'L' ? 'Laki-laki' : 'Perempuan';
+      _bukuKIAStatus = widget.balita!.bukuKIA;
+      // Mengisi field nama orang tua jika dalam mode edit
+      _namaIbuController.text = widget.balita!.namaIbu;
     } else {
       // Mode Tambah: inisialisasi controller kosong
       _nikController = TextEditingController();
@@ -56,7 +62,7 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
     _nikController.dispose();
     _alamatController.dispose();
     _tanggalLahirController.dispose();
-    _bukuKIAController.dispose();
+    _namaIbuController.dispose();
     super.dispose();
   }
 
@@ -82,6 +88,8 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
 
   void _simpanData() async {
     if (_formKey.currentState!.validate()) {
+      // Konversi nilai jenis kelamin ke format yang diharapkan backend ('L' atau 'P')
+      final jenisKelaminValue = _jenisKelamin == 'Laki-laki' ? 'L' : 'P';
       try {
         if (widget.balita == null) {
           // Tambah baru
@@ -90,9 +98,10 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
             _nikController.text,
             _tanggalLahir,
             _alamatController.text,
-            _jenisKelamin,
+            jenisKelaminValue,
             widget.posyanduId,
-            _bukuKIAController.text,
+            _namaIbuController.text,
+            _bukuKIAStatus, // Kirim status 'ada' atau 'tidak_ada'
           );
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -104,14 +113,15 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
         } else {
           // Edit
           await _balitaService.UpdateBalita(
-            widget.balita!.id,
+            widget.balita!.id!,
             _namaController.text,
             _nikController.text,
             _tanggalLahir,
             _alamatController.text,
-            _jenisKelamin,
+            jenisKelaminValue,
             widget.posyanduId,
-            _bukuKIAController.text,
+            _namaIbuController.text,
+            _bukuKIAStatus, // Kirim status 'ada' atau 'tidak_ada'
           );
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -159,6 +169,15 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
                             value!.isEmpty ? 'Nama tidak boleh kosong' : null,
                   ),
                   TextFormField(
+                    controller: _namaIbuController,
+                    decoration: const InputDecoration(labelText: 'Nama Ibu'),
+                    validator:
+                        (value) =>
+                            value!.isEmpty
+                                ? 'Nama Ibu tidak boleh kosong'
+                                : null,
+                  ),
+                  TextFormField(
                     controller: _nikController,
                     decoration: const InputDecoration(labelText: 'NIK'),
                     keyboardType: TextInputType.number,
@@ -174,33 +193,57 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
                     readOnly: true,
                     onTap: () => _pilihTanggalLahir(context),
                   ),
-                  TextFormField(
-                    controller: _bukuKIAController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nomor Buku KIA',
-                    ),
-                    validator:
-                        (value) =>
-                            value!.isEmpty
-                                ? 'Nomor Buku KIA tidak boleh kosong'
-                                : null,
+                  // Radio Buttons untuk Status Buku KIA
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Status Buku KIA'),
+                      Row(
+                        children:
+                            _bukuKIAOptions.map((status) {
+                              return Row(
+                                children: [
+                                  Radio<String>(
+                                    value: status,
+                                    groupValue: _bukuKIAStatus,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _bukuKIAStatus = value!;
+                                      });
+                                    },
+                                  ),
+                                  Text(status == 'ada' ? 'Ada' : 'Tidak Ada'),
+                                ],
+                              );
+                            }).toList(),
+                      ),
+                    ],
                   ),
-                  DropdownButtonFormField<String>(
-                    value: _jenisKelamin,
-                    decoration: const InputDecoration(
-                      labelText: 'Jenis Kelamin',
-                    ),
-                    items:
-                        _jenisKelaminOptions
-                            .map(
-                              (String value) => DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              ),
-                            )
-                            .toList(),
-                    onChanged:
-                        (newValue) => setState(() => _jenisKelamin = newValue!),
+                  // Radio Buttons untuk Jenis Kelamin
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Jenis Kelamin'),
+                      Row(
+                        children:
+                            _jenisKelaminOptions.map((kelamin) {
+                              return Row(
+                                children: [
+                                  Radio<String>(
+                                    value: kelamin,
+                                    groupValue: _jenisKelamin,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _jenisKelamin = value!;
+                                      });
+                                    },
+                                  ),
+                                  Text(kelamin),
+                                ],
+                              );
+                            }).toList(),
+                      ),
+                    ],
                   ),
                   TextFormField(
                     controller: _alamatController,

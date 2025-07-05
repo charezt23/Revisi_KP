@@ -7,6 +7,9 @@ import 'package:flutter_application_1/screens/anggota_detail_screen.dart';
 import 'package:flutter_application_1/screens/anggota_form_screen.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
 
+// Enum untuk jenis-jenis pemeriksaan agar kode lebih rapi
+enum JenisPemeriksaan { imunisasi, kunjungan, kematian }
+
 class KohortDetailScreen extends StatefulWidget {
   final Kohort kohort;
   const KohortDetailScreen({super.key, required this.kohort});
@@ -72,6 +75,69 @@ class _KohortDetailScreenState extends State<KohortDetailScreen> {
     }
   }
 
+  // --- FUNGSI INI DIUBAH ---
+  // Fungsi untuk menampilkan pop-up pilihan jenis pemeriksaan
+  void _lakukanPemeriksaan(Anggota anggota) async {
+    final JenisPemeriksaan? jenisTerpilih = await showDialog<JenisPemeriksaan>(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: const Text('Pilih Jenis Pemeriksaan'),
+          children: <Widget>[
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context, JenisPemeriksaan.imunisasi);
+              },
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Text('Imunisasi'),
+              ),
+            ),
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context, JenisPemeriksaan.kunjungan);
+              },
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Text('Kunjungan'),
+              ),
+            ),
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context, JenisPemeriksaan.kematian);
+              },
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Text('Kematian'),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (jenisTerpilih != null && mounted) {
+      String pesan;
+      switch (jenisTerpilih) {
+        case JenisPemeriksaan.imunisasi:
+          pesan = 'Membuka form Imunisasi untuk ${anggota.nama}...';
+          // TODO: Navigasi ke halaman form Imunisasi
+          break;
+        case JenisPemeriksaan.kunjungan:
+          pesan = 'Membuka form Kunjungan untuk ${anggota.nama}...';
+          // TODO: Navigasi ke halaman form Kunjungan
+          break;
+        case JenisPemeriksaan.kematian:
+          pesan = 'Membuka form Kematian untuk ${anggota.nama}...';
+          // TODO: Navigasi ke halaman form Kematian
+          break;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(pesan), backgroundColor: Colors.blue),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,21 +182,48 @@ class _KohortDetailScreenState extends State<KohortDetailScreen> {
                       subtitle: Text(
                         'Riwayat: ${anggota.riwayatPenyakit.isNotEmpty ? anggota.riwayatPenyakit : '-'}',
                       ),
-                      // 5. Tambahkan IconButton di sini
-                      trailing: IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                        ),
-                        onPressed: () => _hapusAnggota(anggota),
-                        tooltip: 'Hapus Anggota',
+                      // --- PERUBAHAN UTAMA DI SINI ---
+                      // Menggunakan Row untuk menampung dua tombol ikon
+                      trailing: Row(
+                        mainAxisSize:
+                            MainAxisSize
+                                .min, // Agar Row tidak memakan semua tempat
+                        children: [
+                          // Tombol untuk Pemeriksaan
+                          IconButton(
+                            icon: const Icon(
+                              Icons.checklist_rtl,
+                              color: Colors.blue,
+                            ),
+                            tooltip: 'Lakukan Pemeriksaan',
+                            onPressed: () => _lakukanPemeriksaan(anggota),
+                          ),
+                          // Tombol untuk Melihat Detail
+                          IconButton(
+                            icon: const Icon(Icons.visibility_outlined),
+                            tooltip: 'Lihat Detail Anggota',
+                            onPressed:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => AnggotaDetailScreen(
+                                          anggota: anggota,
+                                        ),
+                                  ),
+                                ).then((_) => _updateAnggotaList()),
+                          ),
+                          // Tombol untuk Menghapus
+                          IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                            ),
+                            onPressed: () => _hapusAnggota(anggota),
+                            tooltip: 'Hapus Anggota',
+                          ),
+                        ],
                       ),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AnggotaDetailScreen(anggota: anggota),
-                        ),
-                      ).then((_) => _updateAnggotaList()),
                     ),
                   );
                 },
@@ -140,12 +233,13 @@ class _KohortDetailScreenState extends State<KohortDetailScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AnggotaFormScreen(kohortId: widget.kohort.id!),
-          ),
-        ).then((_) => _updateAnggotaList()),
+        onPressed:
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AnggotaFormScreen(kohortId: widget.kohort.id!),
+              ),
+            ).then((_) => _updateAnggotaList()),
         tooltip: 'Tambah Anggota',
         child: const Icon(Icons.add),
       ),

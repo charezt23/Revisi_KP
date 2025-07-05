@@ -120,13 +120,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemBuilder: (context, index) {
                         final posyandu = posyanduList[index];
                         return Card(
-                          color: Colors.white.withOpacity(0.9),
+                          color: const Color.fromARGB(
+                            255,
+                            255,
+                            255,
+                            255,
+                          ).withOpacity(0.9),
                           margin: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 8,
                           ),
                           child: ListTile(
-                            leading: const Icon(Icons.local_hospital, size: 40),
+                            leading: const Icon(
+                              Icons.local_hospital,
+                              color: Colors.red,
+                              size: 40,
+                            ),
                             title: Text(
                               posyandu.namaPosyandu,
                               style: const TextStyle(
@@ -136,7 +145,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             subtitle: Text(
                               'Dibuat: ${posyandu.createdAt != null ? DateFormat('dd MMM yyyy').format(posyandu.createdAt!) : 'N/A'}',
                             ),
-                            trailing: const Icon(Icons.chevron_right),
+                            trailing: const Icon(
+                              Icons.chevron_right,
+                              color: Colors.blue,
+                            ),
                             onTap: () {
                               // Navigasi ke detail screen yang sudah dimodifikasi
                               Navigator.push(

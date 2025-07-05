@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/anggota_model.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
+import 'package:intl/intl.dart';
 
 class ImunisasiFormScreen extends StatefulWidget {
   final Anggota anggota;
@@ -13,20 +14,37 @@ class ImunisasiFormScreen extends StatefulWidget {
 
 class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _jenisImunisasiController = TextEditingController();
+  final _tanggalController = TextEditingController();
+  String? _jenisImunisasiTerpilih;
+  final List<String> _opsiImunisasi = ['DPT', 'Campak'];
+
+  Future<void> _pilihTanggal() async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _tanggalController.text = DateFormat('dd-MM-yyyy').format(picked);
+      });
+    }
+  }
 
   void _simpanPemeriksaan() {
     if (_formKey.currentState!.validate()) {
       // TODO: Implementasikan logika penyimpanan data imunisasi ke database.
       // Contoh: await DummyDataService().addImunisasi(
       //   anggotaId: widget.anggota.id!,
-      //   jenis: _jenisImunisasiController.text,
+      //   jenis: _jenisImunisasiTerpilih!,
+      //   tanggal: _tanggalController.text,
       // );
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Imunisasi "${_jenisImunisasiController.text}" untuk ${widget.anggota.nama} berhasil disimpan.',
+            'Imunisasi "$_jenisImunisasiTerpilih" untuk ${widget.anggota.nama} berhasil disimpan.',
           ),
           backgroundColor: Colors.green,
         ),
@@ -38,7 +56,7 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
 
   @override
   void dispose() {
-    _jenisImunisasiController.dispose();
+    _tanggalController.dispose();
     super.dispose();
   }
 
@@ -80,15 +98,44 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
                         ),
                         const SizedBox(height: 24),
                         TextFormField(
-                          controller: _jenisImunisasiController,
+                          controller: _tanggalController,
+                          decoration: const InputDecoration(
+                            labelText: 'Tanggal Imunisasi',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.calendar_today),
+                          ),
+                          readOnly: true,
+                          onTap: _pilihTanggal,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Tanggal imunisasi tidak boleh kosong';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: _jenisImunisasiTerpilih,
                           decoration: const InputDecoration(
                             labelText: 'Jenis Imunisasi',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.vaccines_outlined),
                           ),
+                          items:
+                              _opsiImunisasi.map((String jenis) {
+                                return DropdownMenuItem<String>(
+                                  value: jenis,
+                                  child: Text(jenis),
+                                );
+                              }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _jenisImunisasiTerpilih = newValue;
+                            });
+                          },
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Jenis imunisasi tidak boleh kosong';
+                              return 'Silakan pilih jenis imunisasi';
                             }
                             return null;
                           },

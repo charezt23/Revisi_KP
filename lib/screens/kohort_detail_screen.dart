@@ -2,17 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/API/BalitaService.dart'; // Menggunakan service API
 import 'package:flutter_application_1/models/posyanduModel.dart'; // Menggunakan model Posyandu
 import 'package:flutter_application_1/models/balitaModel.dart';
-import 'package:flutter_application_1/screens/Pemeriksaan/KematianFormScreen.dart';
-import 'package:flutter_application_1/screens/Pemeriksaan/KunjunganFormScreen.dart';
 import 'package:flutter_application_1/screens/anggota_form_screen.dart';
-import 'package:flutter_application_1/screens/pemeriksaan/imunisasi_form_screen.dart';
+import 'package:flutter_application_1/screens/balita_detail_screen.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
-
-// TODO: Hapus import ini setelah semua screen pemeriksaan diubah ke BalitaModel
-import 'package:flutter_application_1/models/anggota_model.dart';
-
-// Enum untuk jenis-jenis pemeriksaan agar kode lebih rapi
-enum JenisPemeriksaan { imunisasi, kunjungan, kematian }
 
 class KohortDetailScreen extends StatefulWidget {
   final PosyanduModel posyandu; // Diubah dari Kohort ke PosyanduModel
@@ -90,81 +82,6 @@ class _KohortDetailScreenState extends State<KohortDetailScreen> {
     }
   }
 
-  // --- FUNGSI INI DIUBAH ---
-  // Fungsi untuk menampilkan pop-up pilihan jenis pemeriksaan
-  void _lakukanPemeriksaan(BalitaModel balita) async {
-    final JenisPemeriksaan? jenisTerpilih = await showDialog<JenisPemeriksaan>(
-      context: context,
-      builder: (BuildContext context) {
-        return SimpleDialog(
-          title: const Text('Pilih Jenis Pemeriksaan'),
-          children: <Widget>[
-            SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(context, JenisPemeriksaan.imunisasi);
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Text('Imunisasi'),
-              ),
-            ),
-            SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(context, JenisPemeriksaan.kunjungan);
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Text('Kunjungan'),
-              ),
-            ),
-            SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(context, JenisPemeriksaan.kematian);
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Text('Kematian'),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (jenisTerpilih == null || !mounted) return;
-
-    // Jembatan sementara: Membuat objek Anggota dari BalitaModel
-    // TODO: Hapus ini setelah semua screen pemeriksaan diubah untuk menerima BalitaModel
-    final anggotaDummy = Anggota(
-      id: balita.id,
-      kohortId: balita.posyanduId,
-      nama: balita.nama,
-      keterangan: 'NIK: ${balita.nik}',
-      riwayatPenyakit: '', // BalitaModel tidak punya field ini
-    );
-
-    Widget? nextPage;
-    switch (jenisTerpilih) {
-      case JenisPemeriksaan.imunisasi:
-        nextPage = ImunisasiFormScreen(anggota: anggotaDummy);
-        break;
-      case JenisPemeriksaan.kunjungan:
-        // Mengarahkan ke halaman form kunjungan balita
-        nextPage = KunjunganFormScreen(balita: balita);
-        break;
-      case JenisPemeriksaan.kematian:
-        nextPage = KematianFormScreen(anggota: anggotaDummy);
-        break;
-    }
-
-    if (nextPage != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => nextPage!),
-      ).then((_) => _updateBalitaList());
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -221,6 +138,14 @@ class _KohortDetailScreenState extends State<KohortDetailScreen> {
                       leading: CircleAvatar(child: Text(balita.nama[0])),
                       title: Text(balita.nama),
                       subtitle: Text('NIK: ${balita.nik}'),
+                      onTap:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => BalitaDetailScreen(balita: balita),
+                            ),
+                          ).then((_) => _updateBalitaList()),
                       // --- PERUBAHAN UTAMA DI SINI ---
                       // Menggunakan Row untuk menampung dua tombol ikon
                       trailing: Row(
@@ -228,30 +153,6 @@ class _KohortDetailScreenState extends State<KohortDetailScreen> {
                             MainAxisSize
                                 .min, // Agar Row tidak memakan semua tempat
                         children: [
-                          // Tombol untuk Pemeriksaan
-                          IconButton(
-                            icon: const Icon(
-                              Icons.checklist_rtl,
-                              color: Colors.blue,
-                            ),
-                            tooltip: 'Lakukan Pemeriksaan',
-                            onPressed: () => _lakukanPemeriksaan(balita),
-                          ),
-                          // Tombol untuk Melihat Detail
-                          // IconButton(
-                          //   icon: const Icon(Icons.visibility_outlined),
-                          //   tooltip: 'Lihat Detail Anggota',
-                          //   onPressed:
-                          //       () => Navigator.push(
-                          //         context,
-                          //         MaterialPageRoute(
-                          //           builder:
-                          //               (_) => AnggotaDetailScreen( // TODO: Ganti ke BalitaDetailScreen
-                          //                 anggota: balita,
-                          //               ),
-                          //         ),
-                          //       ).then((_) => _updateBalitaList()),
-                          // ),
                           // Tombol untuk Menghapus
                           IconButton(
                             icon: const Icon(

@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/databse/dummy_data_service.dart'; // Sesuaikan path jika perlu
 import 'package:flutter_application_1/API/authservice.dart';
 import 'package:flutter_application_1/screens/login_screen.dart';
+import 'package:flutter_application_1/screens/kohort_form_screen.dart';
+import 'package:flutter_application_1/screens/kohort_detail_screen.dart';
 import 'package:intl/intl.dart';
-
-import '../models/kohort_model.dart'; // Sesuaikan path jika perlu
-import 'kohort_form_screen.dart'; // Sesuaikan path jika perlu
-import 'kohort_detail_screen.dart'; // Sesuaikan path jika perlu
+import '../API/PosyanduService.dart';
+import '../models/posyanduModel.dart';
+// TODO: Buat atau sesuaikan screen berikut untuk bekerja dengan PosyanduModel
+// import 'posyandu_form_screen.dart';
+// import 'posyandu_detail_screen.dart';
 
 // ===================================================================
 // Widget untuk Background.
@@ -52,17 +55,29 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<List<Kohort>> _kohortList;
+  final Posyanduservice _posyanduService = Posyanduservice();
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _updateKohortList();
+    _fetchPosyanduData();
   }
 
-  void _updateKohortList() {
+  Future<void> _fetchPosyanduData() async {
     setState(() {
-      _kohortList = DummyDataService().getKohortList();
+      _isLoading = true;
+    });
+
+    // TODO: Ganti '1' dengan ID user yang sedang login.
+    // Anda mungkin perlu mendapatkan ID ini dari SharedPreferences setelah login.
+    await _posyanduService.GetPosyanduByUser(1);
+
+    // Karena GetPosyanduByUser tidak mengembalikan apa-apa dan hanya mengisi
+    // list global, kita perlu memanggil setState setelahnya untuk me-render ulang UI.
+    setState(() {
+      // Data sekarang ada di variabel global `posyanduList`
+      _isLoading = false;
     });
   }
 
@@ -140,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Atur background Scaffold menjadi transparan agar background di Stack terlihat
           backgroundColor: const Color.fromARGB(0, 255, 255, 255),
           appBar: AppBar(
-            title: const Text('Manajer Kohort'),
+            title: const Text('Manajer Posyandu'),
             // Atur background AppBar juga menjadi transparan
             backgroundColor: const Color.fromARGB(0, 255, 255, 255),
             // Hilangkan bayangan di bawah AppBar agar menyatu dengan background
@@ -185,92 +200,83 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          body: FutureBuilder<List<Kohort>>(
-            future: _kohortList,
-            builder: (context, snapshot) {
-              // Menampilkan loading indicator saat data sedang diambil
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              // Menampilkan pesan jika tidak ada data atau data kosong
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'Belum ada kohort. Tekan + untuk membuat.',
-                    textAlign: TextAlign.center,
-                    // Tambahkan style agar teks terlihat jelas di atas background
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+          body:
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : posyanduList.isEmpty
+                  ? const Center(
+                    child: Text(
+                      'Belum ada data Posyandu. Tekan + untuk membuat.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.black87, // Warna diubah agar terbaca
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                  : RefreshIndicator(
+                    onRefresh: _fetchPosyanduData,
+                    child: ListView.builder(
+                      itemCount: posyanduList.length,
+                      itemBuilder: (context, index) {
+                        final posyandu = posyanduList[index];
+                        return Card(
+                          color: const Color.fromARGB(
+                            255,
+                            255,
+                            255,
+                            255,
+                          ).withOpacity(0.9),
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: ListTile(
+                            leading: const Icon(
+                              Icons.local_hospital,
+                              color: Colors.red,
+                              size: 40,
+                            ),
+                            title: Text(
+                              posyandu.namaPosyandu,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Dibuat: ${posyandu.createdAt != null ? DateFormat('dd MMM yyyy').format(posyandu.createdAt!) : 'N/A'}',
+                            ),
+                            trailing: const Icon(
+                              Icons.chevron_right,
+                              color: Colors.blue,
+                            ),
+                            onTap: () {
+                              // Navigasi ke detail screen yang sudah dimodifikasi
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  // Mengirim data posyandu ke detail screen
+                                  builder:
+                                      (_) => KohortDetailScreen(
+                                        posyandu: posyandu,
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ),
-                );
-              }
-
-              // Menampilkan daftar kohort jika data tersedia
-              return ListView.builder(
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  final kohort = snapshot.data![index];
-                  // Card memiliki warna default, sehingga konten di dalamnya akan tetap mudah dibaca
-                  return Card(
-                    // Beri sedikit transparansi pada Card agar background sedikit terlihat
-                    color: Colors.white.withOpacity(0.9),
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: ListTile(
-                      leading: const Icon(Icons.groups, size: 40),
-                      title: Text(
-                        kohort.nama,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        'Dibuat: ${DateFormat('dd MMM yyyy').format(kohort.tanggalDibuat)}',
-                      ),
-                      trailing: FutureBuilder<int>(
-                        future: DummyDataService().getAnggotaCount(kohort.id!),
-                        builder: (context, countSnapshot) {
-                          if (countSnapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            );
-                          }
-                          return Chip(
-                            label: Text('${countSnapshot.data ?? 0} Anggota'),
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primaryContainer,
-                          );
-                        },
-                      ),
-                      onTap:
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => KohortDetailScreen(kohort: kohort),
-                            ),
-                          ).then((_) => _updateKohortList()),
-                    ),
-                  );
-                },
-              );
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const KohortFormScreen()),
+              ).then((_) => _fetchPosyanduData());
             },
-          ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed:
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const KohortFormScreen()),
-                ).then((_) => _updateKohortList()),
-            icon: const Icon(Icons.add),
-            label: const Text('Buat Kohort'),
+            child: const Icon(Icons.add),
           ),
         ),
       ],

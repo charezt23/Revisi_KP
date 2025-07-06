@@ -4,7 +4,7 @@ import 'package:flutter_application_1/models/KunjunganBalitaModel.dart';
 import 'package:http/http.dart' as http;
 
 class Kunjunganbalitaservice {
-  CreateKunjunganBalita(
+  Future<void> CreateKunjunganBalita(
     int balitaId,
     DateTime tanggalKunjungan,
     double beratBadan,
@@ -13,56 +13,53 @@ class Kunjunganbalitaservice {
     String rambuGizi,
   ) async {
     try {
-      var request = http.Request(
-        'POST',
-        Uri.parse(base_url + '/kunjungan-balita'),
+      final response = await http.post(
+        Uri.parse('$base_url/kunjungan-balita'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'balita_id': balitaId,
+          'tanggal_kunjungan': tanggalKunjungan.toIso8601String().split('T')[0],
+          'berat_badan': beratBadan,
+          'tinggi_badan': tinggiBadan,
+          'Status_gizi': statusGizi,
+          'rambu_gizi': rambuGizi,
+        }),
       );
-      request.body = json.encode({
-        'balita_id': balitaId,
-        'tanggal_kunjungan': tanggalKunjungan.toIso8601String(),
-        'berat_badan': beratBadan.toStringAsFixed(2),
-        'tinggi_badan': tinggiBadan.toStringAsFixed(2),
-        'Status_gizi': statusGizi,
-        'rambu_gizi': rambuGizi,
-      });
-      request.headers.addAll({'Content-Type': 'application/json'});
-      http.StreamedResponse response = await request.send();
-      if (response.statusCode == 200) {
-        print('Response status: ${response.statusCode}');
-        return true;
-      } else {
-        print('Error: ${response.reasonPhrase}');
-        return false;
+
+      if (response.statusCode != 201 && response.statusCode != 200) {
+        print('Error Body: ${response.body}');
+        throw Exception(
+          'Gagal membuat data kunjungan: ${response.reasonPhrase}',
+        );
       }
+      print('Data kunjungan berhasil dibuat.');
     } catch (e) {
       print(e);
-      return false;
+      throw Exception('Gagal terhubung ke server: $e');
     }
   }
 
-  GetKunjunganbalitaByBalita(id) async {
+  Future<List<KunjunganModel>> GetKunjunganbalitaByBalita(int id) async {
     try {
-      var request = http.Request(
-        'GET',
-        Uri.parse(base_url + '/kunjungan-balita/${id}'),
+      final response = await http.get(
+        Uri.parse('$base_url/kunjungan-balita/$id'),
       );
-      http.StreamedResponse response = await request.send();
       if (response.statusCode == 200) {
-        print('Response status: ${response.statusCode}');
-        var responseData = await response.stream.bytesToString();
-        Map<String, dynamic> responDecode = json.decode(responseData);
-        KunjunganList.clear();
-        KunjunganList.add(KunjunganModel.fromJson(responDecode['data']));
+        Map<String, dynamic> responseDecode = json.decode(response.body);
+        List<dynamic> data = responseDecode['data'];
+        return data.map((item) => KunjunganModel.fromJson(item)).toList();
       } else {
-        print('Error: ${response.reasonPhrase}');
-        return null;
+        throw Exception(
+          'Gagal memuat riwayat kunjungan: ${response.reasonPhrase}',
+        );
       }
     } catch (e) {
       print(e);
+      throw Exception('Gagal terhubung ke server: $e');
     }
   }
 
-  UpdateKunjunganBalita(
+  Future<void> UpdateKunjunganBalita(
     int id,
     int balitaId,
     DateTime tanggalKunjungan,
@@ -72,50 +69,47 @@ class Kunjunganbalitaservice {
     String rambuGizi,
   ) async {
     try {
-      var request = http.Request(
-        'PUT',
-        Uri.parse(base_url + '/kunjungan-balita/${id}'),
+      final response = await http.put(
+        Uri.parse('$base_url/kunjungan-balita/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'balita_id': balitaId,
+          'tanggal_kunjungan': tanggalKunjungan.toIso8601String().split('T')[0],
+          'berat_badan': beratBadan,
+          'tinggi_badan': tinggiBadan,
+          'Status_gizi': statusGizi,
+          'rambu_gizi': rambuGizi,
+        }),
       );
-      request.body = json.encode({
-        'balita_id': balitaId,
-        'tanggal_kunjungan': tanggalKunjungan.toIso8601String(),
-        'berat_badan': beratBadan.toStringAsFixed(2),
-        'tinggi_badan': tinggiBadan.toStringAsFixed(2),
-        'Status_gizi': statusGizi,
-        'rambu_gizi': rambuGizi,
-      });
-      request.headers.addAll({'Content-Type': 'application/json'});
-      http.StreamedResponse response = await request.send();
-      if (response.statusCode == 200) {
-        print('Response status: ${response.statusCode}');
-        return true;
-      } else {
-        print('Error: ${response.reasonPhrase}');
-        return false;
+
+      if (response.statusCode != 200) {
+        print('Error Body: ${response.body}');
+        throw Exception(
+          'Gagal memperbarui data kunjungan: ${response.reasonPhrase}',
+        );
       }
+      print('Data kunjungan berhasil diperbarui.');
     } catch (e) {
       print(e);
-      return false;
+      throw Exception('Gagal terhubung ke server: $e');
     }
   }
 
-  DeleteKunjunganBalita(int id) async {
+  Future<void> DeleteKunjunganBalita(int id) async {
     try {
-      var request = http.Request(
-        'DELETE',
-        Uri.parse(base_url + '/kunjungan-balita/${id}'),
+      final response = await http.delete(
+        Uri.parse('$base_url/kunjungan-balita/$id'),
       );
-      http.StreamedResponse response = await request.send();
-      if (response.statusCode == 200) {
-        print('Response status: ${response.statusCode}');
-        return true;
-      } else {
-        print('Error: ${response.reasonPhrase}');
-        return false;
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Gagal menghapus data kunjungan: ${response.reasonPhrase}',
+        );
       }
+      print('Data kunjungan berhasil dihapus.');
     } catch (e) {
       print(e);
-      return false;
+      throw Exception('Gagal terhubung ke server: $e');
     }
   }
 }

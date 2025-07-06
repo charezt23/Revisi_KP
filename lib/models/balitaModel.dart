@@ -7,6 +7,7 @@ class BalitaModel {
   DateTime tanggalLahir;
   String alamat;
   String jenisKelamin;
+  String namaIbu = ''; // Default value for namaIbu
   int posyanduId;
   String bukuKIA;
   PosyanduModel? posyandu; // Added PosyanduModel
@@ -27,11 +28,12 @@ class BalitaModel {
     : id = json['id'],
       nama = json['nama'],
       nik = json['nik'],
+      namaIbu = json['nama_ibu'] ?? '',
       tanggalLahir = DateTime.parse(json['tanggal_lahir']),
       alamat = json['alamat'],
       jenisKelamin = json['jenis_kelamin'],
       posyanduId = json['posyandu_id'],
-      bukuKIA = json['Buku_KIA'], // Corrected key to 'Buku_KIA'
+      bukuKIA = json['Buku_KIA'],
       posyandu =
           json['posyandu'] != null
               ? PosyanduModel.fromJson(json['posyandu'])
@@ -42,11 +44,12 @@ class BalitaModel {
     data['id'] = id;
     data['nama'] = nama;
     data['nik'] = nik;
+    data['nama_ibu'] = namaIbu;
     data['tanggal_lahir'] = tanggalLahir.toIso8601String();
     data['alamat'] = alamat;
     data['jenis_kelamin'] = jenisKelamin;
     data['posyandu_id'] = posyanduId;
-    data['Buku_KIA'] = bukuKIA; // Corrected key to 'Buku_KIA'
+    data['Buku_KIA'] = bukuKIA;
     if (posyandu != null) {
       data['posyandu'] = posyandu!.toJson();
     }

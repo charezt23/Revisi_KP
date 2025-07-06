@@ -40,3 +40,5 @@ class PosyanduModel {
     return data;
   }
 }
+
+List<PosyanduModel> posyanduList = [];

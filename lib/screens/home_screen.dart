@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/databse/dummy_data_service.dart'; // Sesuaikan path jika perlu
+import 'package:flutter_application_1/API/authservice.dart';
+import 'package:flutter_application_1/screens/login_screen.dart';
 import 'package:intl/intl.dart';
 
 import '../models/kohort_model.dart'; // Sesuaikan path jika perlu
@@ -64,6 +66,67 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // Method untuk menampilkan info user
+  void _showUserInfo(user) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Informasi Pengguna'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('ID: ${user.id}'),
+              const SizedBox(height: 8),
+              Text('Nama: ${user.name}'),
+              const SizedBox(height: 8),
+              Text('Email: ${user.email}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Tutup'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Method untuk menampilkan dialog logout
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Logout'),
+          content: const Text('Apakah Anda yakin ingin keluar?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Tutup dialog
+                await AuthService.logout(); // Hapus data login
+
+                // Navigasi ke login screen dan hapus semua route sebelumnya
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Gunakan Stack untuk menumpuk background dengan konten
@@ -82,6 +145,45 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: const Color.fromARGB(0, 255, 255, 255),
             // Hilangkan bayangan di bawah AppBar agar menyatu dengan background
             elevation: 0,
+            actions: [
+              // Menu untuk melihat info user dan logout
+              PopupMenuButton<String>(
+                onSelected: (value) async {
+                  if (value == 'profile') {
+                    // Tampilkan info user
+                    final user = await AuthService.getCurrentUser();
+                    if (user != null) {
+                      _showUserInfo(user);
+                    }
+                  } else if (value == 'logout') {
+                    _showLogoutDialog();
+                  }
+                },
+                itemBuilder:
+                    (BuildContext context) => [
+                      const PopupMenuItem<String>(
+                        value: 'profile',
+                        child: Row(
+                          children: [
+                            Icon(Icons.person),
+                            SizedBox(width: 8),
+                            Text('Profil'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'logout',
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout),
+                            SizedBox(width: 8),
+                            Text('Logout'),
+                          ],
+                        ),
+                      ),
+                    ],
+              ),
+            ],
           ),
           body: FutureBuilder<List<Kohort>>(
             future: _kohortList,
@@ -142,18 +244,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           }
                           return Chip(
                             label: Text('${countSnapshot.data ?? 0} Anggota'),
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primaryContainer,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primaryContainer,
                           );
                         },
                       ),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => KohortDetailScreen(kohort: kohort),
-                        ),
-                      ).then((_) => _updateKohortList()),
+                      onTap:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => KohortDetailScreen(kohort: kohort),
+                            ),
+                          ).then((_) => _updateKohortList()),
                     ),
                   );
                 },
@@ -161,10 +264,11 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const KohortFormScreen()),
-            ).then((_) => _updateKohortList()),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const KohortFormScreen()),
+                ).then((_) => _updateKohortList()),
             icon: const Icon(Icons.add),
             label: const Text('Buat Kohort'),
           ),

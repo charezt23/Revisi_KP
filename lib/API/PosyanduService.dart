@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:flutter_application_1/API/BaseURL.dart';
+import 'package:flutter_application_1/API/authservice.dart';
 import 'package:flutter_application_1/models/posyanduModel.dart';
 import 'package:http/http.dart' as http;
 
 class Posyanduservice {
-  CreatePosyandu(String namaPosyandu, String namaDesa, int userId) async {
+  CreatePosyandu(String namaPosyandu, String namaDesa) async {
     try {
+      final userId = await AuthService.getUserId();
       var request = http.Request('POST', Uri.parse(base_url + '/posyandu'));
       request.body = json.encode({
         'nama_posyandu': namaPosyandu,
@@ -26,11 +28,12 @@ class Posyanduservice {
     }
   }
 
-  GetPosyanduByUser(id) async {
+  GetPosyanduByUser() async {
     try {
+      final userId = await AuthService.getUserId();
       var request = http.Request(
         'GET',
-        Uri.parse(base_url + '/posyandu/user/${id}'),
+        Uri.parse(base_url + '/posyandu/user/${userId}'),
       );
       http.StreamedResponse response = await request.send();
       if (response.statusCode == 200) {

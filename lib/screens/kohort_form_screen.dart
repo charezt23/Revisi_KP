@@ -39,7 +39,7 @@ class _KohortFormScreenState extends State<KohortFormScreen> {
         await _posyanduService.CreatePosyandu(
           _namaPosyanduController.text,
           _namaDesaController.text,
-          1, // Untuk sementara, ID pengguna di-hardcode
+          // Untuk sementara, ID pengguna di-hardcode
         );
 
         // Jika kode berhasil mencapai baris ini, berarti tidak ada error.

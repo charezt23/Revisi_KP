@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_application_1/databse/dummy_data_service.dart'; // Sesuaikan path jika perlu
-import 'package:flutter_application_1/API/authservice.dart';
-import 'package:flutter_application_1/screens/login_screen.dart';
+
+import 'package:flutter/material.dart ';
 import 'package:flutter_application_1/screens/kohort_form_screen.dart';
 import 'package:flutter_application_1/screens/kohort_detail_screen.dart';
 import 'package:intl/intl.dart';
@@ -71,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // TODO: Ganti '1' dengan ID user yang sedang login.
     // Anda mungkin perlu mendapatkan ID ini dari SharedPreferences setelah login.
-    await _posyanduService.GetPosyanduByUser(1);
+    await _posyanduService.GetPosyanduByUser();
 
     // Karena GetPosyanduByUser tidak mengembalikan apa-apa dan hanya mengisi
     // list global, kita perlu memanggil setState setelahnya untuk me-render ulang UI.
@@ -283,9 +281,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
-// ===================================================================
-// Fungsi main di bawah ini hanya untuk keperluan testing.
-// Anda bisa menjalankan file ini secara langsung dari IDE Anda
-// untuk melihat tampilan HomeScreen tanpa melewati halaman login.
-// ===================================================================

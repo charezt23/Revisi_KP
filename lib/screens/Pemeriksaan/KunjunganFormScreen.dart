@@ -34,6 +34,9 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
   String? _selectedRambuGizi;
   final List<String> _rambuGiziOptions = ['O', 'N1', 'N2', 'T1', 'T2', 'T3'];
 
+  // State untuk loading indicator
+  bool _isLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -58,10 +61,16 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
 
   void _simpanPemeriksaan() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
       try {
         await _kunjunganService.CreateKunjunganBalita(
           widget.balita.id!,
           _selectedDate,
+          // Menggunakan replaceAll untuk memastikan format angka benar
+          // jika pengguna memasukkan koma sebagai desimal.
           double.parse(_beratBadanController.text.replaceAll(',', '.')),
           double.parse(_tinggiBadanController.text.replaceAll(',', '.')),
           _selectedStatusGizi!,
@@ -78,7 +87,8 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop();
+        // Kembali ke halaman sebelumnya dengan hasil 'true' untuk menandakan sukses
+        Navigator.of(context).pop(true);
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -87,6 +97,12 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
             backgroundColor: Colors.red,
           ),
         );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -351,11 +367,21 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(
-                          onPressed: _simpanPemeriksaan,
+                          onPressed: _isLoading ? null : _simpanPemeriksaan,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: const Text('Simpan'),
+                          child:
+                              _isLoading
+                                  ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 3,
+                                    ),
+                                  )
+                                  : const Text('Simpan'),
                         ),
                       ],
                     ),

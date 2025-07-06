@@ -8,7 +8,8 @@ import 'package:flutter_application_1/widgets/login_background.dart';
 
 class KohortDetailScreen extends StatefulWidget {
   final PosyanduModel posyandu; // Diubah dari Kohort ke PosyanduModel
-  const KohortDetailScreen({super.key, required this.posyandu});
+  const KohortDetailScreen({Key? key, required this.posyandu})
+    : super(key: key);
 
   @override
   State<KohortDetailScreen> createState() => _KohortDetailScreenState();

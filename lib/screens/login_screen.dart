@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_application_1/API/authservice.dart';
 import 'home_screen.dart'
     hide LoginBackground; // <-- Import HomeScreen untuk navigasi
 
@@ -30,36 +31,57 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // --- FUNGSI UNTUK LOGIKA LOGIN ---
   void _login() async {
+    // Validasi input
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showErrorDialog('Email dan password tidak boleh kosong');
+      return;
+    }
+
     // Tampilkan loading indicator
     setState(() {
       _isLoading = true;
     });
 
-    // Simulasi delay jaringan
-    await Future.delayed(const Duration(seconds: 2));
-
-    // Logika login dummy
-    if (_emailController.text == 'admin@gmail.com' &&
-        _passwordController.text == 'admin123') {
-      // Jika berhasil, navigasi ke HomeScreen
-      // pushReplacement agar tidak bisa kembali ke halaman login
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
-    } else {
-      // Jika gagal, tampilkan pesan error
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Email atau Password salah!'),
-          backgroundColor: Colors.red,
-        ),
+    try {
+      // Panggil AuthService untuk login
+      final loginResponse = await AuthService.login(
+        _emailController.text.trim(),
+        _passwordController.text,
       );
-    }
 
-    // Sembunyikan loading indicator
-    setState(() {
-      _isLoading = false;
-    });
+      if (loginResponse.success) {
+        // Jika berhasil, navigasi ke HomeScreen
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+
+        // Tampilkan pesan sukses
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(loginResponse.message),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Jika gagal, tampilkan pesan error
+        _showErrorDialog(loginResponse.message);
+      }
+    } catch (e) {
+      // Handle error yang tidak terduga
+      _showErrorDialog('Terjadi kesalahan: ${e.toString()}');
+    } finally {
+      // Matikan loading indicator
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Fungsi untuk menampilkan dialog error
+  void _showErrorDialog(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   @override
@@ -143,9 +165,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ? Icons.visibility_off
                                 : Icons.visibility,
                           ),
-                          onPressed: () => setState(
-                            () => _isPasswordVisible = !_isPasswordVisible,
-                          ),
+                          onPressed:
+                              () => setState(
+                                () => _isPasswordVisible = !_isPasswordVisible,
+                              ),
                         ),
                         filled: true,
                         fillColor: const Color.fromARGB(
@@ -174,17 +197,19 @@ class _LoginScreenState extends State<LoginScreen> {
                               Checkbox(
                                 activeColor: Colors.deepPurple,
                                 value: _rememberMe,
-                                onChanged: (value) =>
-                                    setState(() => _rememberMe = value!),
+                                onChanged:
+                                    (value) =>
+                                        setState(() => _rememberMe = value!),
                               ),
                               // Dibungkus Flexible agar teks tidak overflow di layar sempit
                               Flexible(
                                 child: Text(
                                   'Ingat Saya',
                                   style: GoogleFonts.poppins(
-                                    color: _rememberMe
-                                        ? Colors.deepPurple
-                                        : Colors.black87,
+                                    color:
+                                        _rememberMe
+                                            ? Colors.deepPurple
+                                            : Colors.black87,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -217,23 +242,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
+                      child:
+                          _isLoading
+                              ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 3,
+                                ),
+                              )
+                              : Text(
+                                'MASUK',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
                               ),
-                            )
-                          : Text(
-                              'MASUK',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: Colors.white,
-                              ),
-                            ),
                     ),
                     const SizedBox(height: 24),
                     Row(

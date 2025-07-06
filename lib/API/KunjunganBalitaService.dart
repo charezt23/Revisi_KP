@@ -12,53 +12,81 @@ class Kunjunganbalitaservice {
     String statusGizi,
     String rambuGizi,
   ) async {
+    // Menggunakan http.post untuk request yang lebih sederhana dan modern.
     try {
-      var request = http.Request(
-        'POST',
-        Uri.parse(base_url + '/kunjungan-balita'),
+      final response = await http.post(
+        Uri.parse('$base_url/kunjungan-balita'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'balita_id': balitaId,
+          // Menggunakan split('T')[0] untuk memastikan format tanggal YYYY-MM-DD
+          'tanggal_kunjungan': tanggalKunjungan.toIso8601String().split('T')[0],
+          'berat_badan': beratBadan.toStringAsFixed(2),
+          'tinggi_badan': tinggiBadan.toStringAsFixed(2),
+          'Status_gizi': statusGizi,
+          'rambu_gizi': rambuGizi,
+        }),
       );
-      request.body = json.encode({
-        'balita_id': balitaId,
-        'tanggal_kunjungan': tanggalKunjungan.toIso8601String(),
-        'berat_badan': beratBadan.toStringAsFixed(2),
-        'tinggi_badan': tinggiBadan.toStringAsFixed(2),
-        'Status_gizi': statusGizi,
-        'rambu_gizi': rambuGizi,
-      });
-      request.headers.addAll({'Content-Type': 'application/json'});
-      http.StreamedResponse response = await request.send();
-      if (response.statusCode == 200) {
-        print('Response status: ${response.statusCode}');
-        return true;
+
+      // Kode status 201 (Created) adalah standar untuk POST yang berhasil.
+      // Kita juga cek 200 untuk kompatibilitas.
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        print('Kunjungan berhasil dicatat. Status: ${response.statusCode}');
+        // Tidak perlu mengembalikan apa-apa, sukses ditandai dengan tidak adanya exception.
       } else {
-        print('Error: ${response.reasonPhrase}');
-        return false;
+        // Jika gagal, lemparkan Exception dengan pesan error dari server.
+        throw Exception(
+          'Gagal menyimpan kunjungan: ${response.statusCode} ${response.reasonPhrase}',
+        );
       }
     } catch (e) {
-      print(e);
-      return false;
+      // Lemparkan kembali exception agar bisa ditangani di UI.
+      throw Exception('Gagal terhubung ke server: $e');
     }
   }
 
-  GetKunjunganbalitaByBalita(id) async {
+  Future<List<KunjunganModel>> GetKunjunganbalitaByBalita(id) async {
     try {
-      var request = http.Request(
-        'GET',
-        Uri.parse(base_url + '/kunjungan-balita/${id}'),
+      final response = await http.get(
+        Uri.parse('$base_url/kunjungan-balita/$id'),
+        headers: {'Accept': 'application/json'},
       );
-      http.StreamedResponse response = await request.send();
+
       if (response.statusCode == 200) {
-        print('Response status: ${response.statusCode}');
-        var responseData = await response.stream.bytesToString();
-        Map<String, dynamic> responDecode = json.decode(responseData);
-        KunjunganList.clear();
-        KunjunganList.add(KunjunganModel.fromJson(responDecode['data']));
+        Map<String, dynamic> responDecode = json.decode(response.body);
+
+        // Secara aman menangani 'data' yang bisa jadi List atau Map
+        final dynamic dataValue = responDecode['data'];
+        List<dynamic> dataList;
+
+        if (dataValue is List) {
+          dataList = dataValue;
+        } else if (dataValue is Map<String, dynamic>) {
+          // Jika API salah mengembalikan objek tunggal, bungkus dalam list.
+          dataList = [dataValue];
+        } else {
+          // Jika data null atau bukan list/map, kembalikan list kosong agar aman.
+          return [];
+        }
+
+        List<KunjunganModel> kunjunganList =
+            dataList.map((item) => KunjunganModel.fromJson(item)).toList();
+
+        // Kembalikan list secara langsung, jangan gunakan variabel global
+        return kunjunganList;
       } else {
         print('Error: ${response.reasonPhrase}');
-        return null;
+        // Lemparkan exception agar bisa ditangani oleh FutureBuilder di UI
+        throw Exception(
+          'Gagal memuat riwayat kunjungan: ${response.reasonPhrase}',
+        );
       }
     } catch (e) {
       print(e);
+      throw Exception('Gagal memuat riwayat kunjungan: $e');
     }
   }
 

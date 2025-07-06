@@ -20,15 +20,10 @@ class _RiwayatKunjunganScreenState extends State<RiwayatKunjunganScreen> {
   @override
   void initState() {
     super.initState();
-    _riwayatKunjungan = _fetchRiwayat();
-  }
-
-  // Helper untuk memanggil service dan memastikan tipe data yang kembali benar
-  Future<List<KunjunganModel>> _fetchRiwayat() async {
-    // Memanggil fungsi lama yang tidak mengembalikan nilai
-    await _kunjunganService.GetKunjunganbalitaByBalita(widget.balita.id!);
-    // Mengembalikan hasil dari variabel global yang diisi oleh fungsi di atas
-    return List<KunjunganModel>.from(KunjunganList);
+    // Langsung panggil service yang sekarang sudah mengembalikan Future<List<KunjunganModel>>
+    _riwayatKunjungan = _kunjunganService.GetKunjunganbalitaByBalita(
+      widget.balita.id!,
+    );
   }
 
   @override

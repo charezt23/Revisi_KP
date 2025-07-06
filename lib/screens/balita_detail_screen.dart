@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/API/KunjunganBalitaService.dart';
-import 'package:flutter_application_1/models/KunjunganBalitaModel.dart';
-import 'package:flutter_application_1/models/balitaModel.dart';
-import 'package:flutter_application_1/screens/Pemeriksaan/KunjunganFormScreen.dart';
-import 'package:flutter_application_1/screens/Pemeriksaan/KematianFormScreen.dart';
-import 'package:flutter_application_1/screens/pemeriksaan/imunisasi_form_screen.dart';
-import 'package:flutter_application_1/widgets/login_background.dart';
 import 'package:intl/intl.dart';
 
-// TODO: Hapus import ini setelah semua screen pemeriksaan diubah ke BalitaModel
-import 'package:flutter_application_1/models/anggota_model.dart';
+// Ganti dengan path yang benar ke file service dan model Anda
+import '../API/KunjunganBalitaService.dart';
+import '../API/kematianService.dart';
+import '../models/KunjunganBalitaModel.dart';
+import '../models/kematian.dart';
+import '../models/balitaModel.dart';
+import '../models/anggota_model.dart';
+import './Pemeriksaan/KunjunganFormScreen.dart';
+import './Pemeriksaan/KematianFormScreen.dart';
+import './pemeriksaan/imunisasi_form_screen.dart';
+import '../widgets/login_background.dart';
 
 enum JenisPemeriksaan { imunisasi, kunjungan, kematian }
+
+// Wrapper class untuk menampung semua data yang di-fetch
+class BalitaDetailData {
+  final List<KunjunganModel> riwayatKunjungan;
+  final Kematian? dataKematian;
+
+  BalitaDetailData({required this.riwayatKunjungan, this.dataKematian});
+}
 
 class BalitaDetailScreen extends StatefulWidget {
   final BalitaModel balita;
@@ -23,31 +33,36 @@ class BalitaDetailScreen extends StatefulWidget {
 
 class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
   final Kunjunganbalitaservice _kunjunganService = Kunjunganbalitaservice();
-  late Future<List<KunjunganModel>> _riwayatKunjungan;
+  final KematianService _kematianService = KematianService();
+  late Future<BalitaDetailData> _detailData;
 
   @override
   void initState() {
     super.initState();
-    _updateRiwayat();
+    _updateData();
   }
 
-  // Helper untuk memanggil service dan memastikan tipe data yang kembali benar
-  Future<List<KunjunganModel>> _fetchRiwayat() async {
-    // Memanggil fungsi lama yang tidak mengembalikan nilai
-    await _kunjunganService.GetKunjunganbalitaByBalita(widget.balita.id!);
-    // Mengembalikan hasil dari variabel global yang diisi oleh fungsi di atas
-    return List<KunjunganModel>.from(KunjunganList);
+  // Mengambil data dengan cara yang benar (tanpa Future.wait untuk tipe berbeda)
+  Future<BalitaDetailData> _fetchData() async {
+    // Panggil await satu per satu. Ini lebih aman dan jelas.
+    final riwayatKunjungan = await _kunjunganService.GetKunjunganbalitaByBalita(
+      widget.balita.id!,
+    );
+    final dataKematian = await _kematianService.getKematian(widget.balita.id!);
+
+    return BalitaDetailData(
+      riwayatKunjungan: riwayatKunjungan,
+      dataKematian: dataKematian,
+    );
   }
 
-  void _updateRiwayat() {
+  void _updateData() {
     setState(() {
-      // Menggunakan helper baru yang sudah memiliki tipe data yang benar
-      _riwayatKunjungan = _fetchRiwayat();
+      _detailData = _fetchData();
     });
   }
 
-  // Fungsi untuk menampilkan pop-up pilihan jenis pemeriksaan
-  void _lakukanPemeriksaan() async {
+  Future<void> _lakukanPemeriksaan() async {
     final JenisPemeriksaan? jenisTerpilih = await showDialog<JenisPemeriksaan>(
       context: context,
       builder: (BuildContext context) {
@@ -55,27 +70,24 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
           title: const Text('Pilih Jenis Pemeriksaan'),
           children: <Widget>[
             SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(context, JenisPemeriksaan.imunisasi);
-              },
+              onPressed:
+                  () => Navigator.pop(context, JenisPemeriksaan.imunisasi),
               child: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
                 child: Text('Imunisasi'),
               ),
             ),
             SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(context, JenisPemeriksaan.kunjungan);
-              },
+              onPressed:
+                  () => Navigator.pop(context, JenisPemeriksaan.kunjungan),
               child: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
                 child: Text('Kunjungan'),
               ),
             ),
             SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(context, JenisPemeriksaan.kematian);
-              },
+              onPressed:
+                  () => Navigator.pop(context, JenisPemeriksaan.kematian),
               child: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
                 child: Text('Kematian'),
@@ -89,7 +101,6 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     if (jenisTerpilih == null || !mounted) return;
 
     final balita = widget.balita;
-    // Jembatan sementara: Membuat objek Anggota dari BalitaModel
     final anggotaDummy = Anggota(
       id: balita.id,
       kohortId: balita.posyanduId,
@@ -115,21 +126,90 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => nextPage!),
-      ).then((_) => _updateRiwayat());
+      ).then((result) {
+        // Hanya update data jika form ditutup dengan hasil 'true' (sukses).
+        if (result == true) {
+          _updateData();
+        }
+      });
     }
-    ;
   }
 
-  // --- Widget Helper untuk merapikan kode ---
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Detail ${widget.balita.nama}')),
+      body: FutureBuilder<BalitaDetailData>(
+        future: _detailData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
+          if (snapshot.hasError) {
+            return Center(child: Text('Gagal memuat data: ${snapshot.error}'));
+          }
+
+          if (!snapshot.hasData) {
+            return const Center(child: Text('Data tidak ditemukan.'));
+          }
+
+          final detailData = snapshot.data!;
+          final riwayat = detailData.riwayatKunjungan;
+          final dataKematian = detailData.dataKematian;
+
+          riwayat.sort(
+            (a, b) => b.tanggalKunjungan.compareTo(a.tanggalKunjungan),
+          );
+          final kunjunganTerbaru = riwayat.isNotEmpty ? riwayat.first : null;
+
+          return Stack(
+            children: [
+              const LoginBackground(),
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoDasar(),
+                    const SizedBox(height: 16),
+                    if (dataKematian != null)
+                      _buildInfoKematian(dataKematian)
+                    else ...[
+                      _buildStatusSaatIni(kunjunganTerbaru),
+                      const SizedBox(height: 24),
+                      _buildRiwayat(riwayat),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+      floatingActionButton: FutureBuilder<BalitaDetailData>(
+        future: _detailData,
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data!.dataKematian == null) {
+            return FloatingActionButton(
+              onPressed: _lakukanPemeriksaan,
+              tooltip: 'Lakukan Pemeriksaan',
+              child: const Icon(Icons.checklist_rtl),
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+  }
+
+  // --- Widget Helper ---
   Widget _buildInfoDasar() {
     final balita = widget.balita;
-    String jenisKelaminLengkap = '-';
-    if (balita.jenisKelamin == 'L') {
-      jenisKelaminLengkap = 'Laki-laki';
-    } else if (balita.jenisKelamin == 'P') {
-      jenisKelaminLengkap = 'Perempuan';
-    }
+    String jenisKelaminLengkap =
+        (balita.jenisKelamin == 'L')
+            ? 'Laki-laki'
+            : (balita.jenisKelamin == 'P' ? 'Perempuan' : '-');
 
     return Card(
       color: Colors.white.withOpacity(0.85),
@@ -149,6 +229,31 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
             Text('Jenis Kelamin: $jenisKelaminLengkap'),
             Text('Alamat: ${balita.alamat}'),
             Text('Buku KIA: ${balita.bukuKIA == 'ada' ? 'Ada' : 'Tidak Ada'}'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoKematian(Kematian kematian) {
+    return Card(
+      color: Colors.grey.shade300,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Telah Meninggal Dunia',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(color: Colors.black87),
+            ),
+            const Divider(),
+            Text(
+              'Tanggal: ${DateFormat('dd MMMM yyyy', 'id_ID').format(kematian.tanggalKematian)}',
+            ),
+            Text('Penyebab: ${kematian.penyebab ?? 'Tidak diketahui'}'),
           ],
         ),
       ),
@@ -192,7 +297,6 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Judul dikembalikan menjadi Text biasa
         Text(
           'Riwayat Pemeriksaan',
           style: Theme.of(context).textTheme.titleLarge,
@@ -225,57 +329,6 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
             },
           ),
       ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Detail ${widget.balita.nama}')),
-      body: Stack(
-        children: [
-          const LoginBackground(),
-          FutureBuilder<List<KunjunganModel>>(
-            future: _riwayatKunjungan,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(
-                  child: Text('Gagal memuat data: ${snapshot.error}'),
-                );
-              }
-              // Urutkan riwayat berdasarkan tanggal, dari yang terbaru ke terlama
-              final riwayat = snapshot.data ?? [];
-              riwayat.sort(
-                (a, b) => b.tanggalKunjungan.compareTo(a.tanggalKunjungan),
-              );
-              final kunjunganTerbaru =
-                  riwayat.isNotEmpty ? riwayat.first : null;
-
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInfoDasar(),
-                    const SizedBox(height: 16),
-                    _buildStatusSaatIni(kunjunganTerbaru),
-                    const SizedBox(height: 24),
-                    _buildRiwayat(riwayat),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _lakukanPemeriksaan,
-        tooltip: 'Lakukan Pemeriksaan',
-        child: const Icon(Icons.checklist_rtl),
-      ),
     );
   }
 }

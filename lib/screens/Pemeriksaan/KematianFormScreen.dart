@@ -75,7 +75,7 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       } else if (!isSuccess && mounted) {
         // Jika service mengembalikan false, tampilkan pesan error umum
         ScaffoldMessenger.of(context).showSnackBar(

@@ -80,7 +80,7 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       // Tangani error

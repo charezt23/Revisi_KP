@@ -44,16 +44,22 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
 
   // Mengambil data dengan cara yang benar (tanpa Future.wait untuk tipe berbeda)
   Future<BalitaDetailData> _fetchData() async {
-    // Panggil await satu per satu. Ini lebih aman dan jelas.
-    final riwayatKunjungan = await _kunjunganService.GetKunjunganbalitaByBalita(
-      widget.balita.id!,
-    );
-    final dataKematian = await _kematianService.getKematian(widget.balita.id!);
+    try {
+      // Panggil await satu per satu. Ini lebih aman dan jelas.
+      final riwayatKunjungan =
+          await _kunjunganService.GetKunjunganbalitaByBalita(widget.balita.id!);
+      final dataKematian = await _kematianService.getKematian(
+        widget.balita.id!,
+      );
 
-    return BalitaDetailData(
-      riwayatKunjungan: riwayatKunjungan,
-      dataKematian: dataKematian,
-    );
+      return BalitaDetailData(
+        riwayatKunjungan: riwayatKunjungan,
+        dataKematian: dataKematian,
+      );
+    } catch (e) {
+      // Jika ada error, lempar exception agar dapat ditangani di UI
+      throw Exception('Gagal memuat data: $e');
+    }
   }
 
   void _updateData() {
@@ -122,23 +128,41 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
         break;
     }
 
-    if (nextPage != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => nextPage!),
-      ).then((result) {
-        // Hanya update data jika form ditutup dengan hasil 'true' (sukses).
-        if (result == true) {
-          _updateData();
-        }
-      });
+    // Navigate ke form pemeriksaan
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => nextPage!),
+    );
+
+    // Update data jika form ditutup dengan hasil 'true' (sukses).
+    if (result == true) {
+      _updateData();
+      // Tampilkan notifikasi bahwa data berhasil diperbarui
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data berhasil diperbarui'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Detail ${widget.balita.nama}')),
+      appBar: AppBar(
+        title: Text('Detail ${widget.balita.nama}'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _updateData,
+            tooltip: 'Refresh Data',
+          ),
+        ],
+      ),
       body: FutureBuilder<BalitaDetailData>(
         future: _detailData,
         builder: (context, snapshot) {
@@ -166,21 +190,29 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
           return Stack(
             children: [
               const LoginBackground(),
-              SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInfoDasar(),
-                    const SizedBox(height: 16),
-                    if (dataKematian != null)
-                      _buildInfoKematian(dataKematian)
-                    else ...[
-                      _buildStatusSaatIni(kunjunganTerbaru),
-                      const SizedBox(height: 24),
-                      _buildRiwayat(riwayat),
+              RefreshIndicator(
+                onRefresh: () async {
+                  _updateData();
+                  // Tunggu sebentar agar user melihat refresh indicator
+                  await Future.delayed(const Duration(milliseconds: 800));
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInfoDasar(),
+                      const SizedBox(height: 16),
+                      if (dataKematian != null)
+                        _buildInfoKematian(dataKematian)
+                      else ...[
+                        _buildStatusSaatIni(kunjunganTerbaru),
+                        const SizedBox(height: 24),
+                        _buildRiwayat(riwayat),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ],

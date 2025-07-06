@@ -129,24 +129,33 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     }
 
     // Navigate ke form pemeriksaan
-    final result = await Navigator.push(
+    final result = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(builder: (_) => nextPage!),
     );
 
-    // Update data jika form ditutup dengan hasil 'true' (sukses).
-    if (result == true) {
+    // Jika form ditutup dengan data KunjunganModel baru, update UI secara lokal
+    if (result is KunjunganModel) {
+      final kunjunganBaru = result;
+      // Ambil data yang ada saat ini dari future yang sudah selesai
+      final dataSaatIni = await _detailData;
+
+      // Buat list riwayat baru dengan data baru di paling atas
+      final riwayatBaru = [kunjunganBaru, ...dataSaatIni.riwayatKunjungan];
+
+      // Buat objek data detail yang baru
+      final dataDetailBaru = BalitaDetailData(
+        riwayatKunjungan: riwayatBaru,
+        dataKematian: dataSaatIni.dataKematian,
+      );
+
+      // Ganti future lama dengan future baru yang langsung selesai dengan data baru
+      setState(() {
+        _detailData = Future.value(dataDetailBaru);
+      });
+    } else if (result == true) {
+      // Fallback untuk form lain yang mungkin masih mengembalikan 'true'
       _updateData();
-      // Tampilkan notifikasi bahwa data berhasil diperbarui
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Data berhasil diperbarui'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
     }
   }
 

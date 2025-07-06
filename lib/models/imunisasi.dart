@@ -1,8 +1,23 @@
 import 'dart:convert';
 
-// Fungsi untuk decode list dari JSON
-List<Imunisasi> imunisasiFromJson(String str) =>
-    List<Imunisasi>.from(json.decode(str).map((x) => Imunisasi.fromJson(x)));
+// Fungsi untuk decode list dari JSON (Sudah diperbarui dan aman dari null)
+List<Imunisasi> imunisasiFromJson(String? str) {
+  // Jika string JSON null, kosong, atau berisi 'null', kembalikan list kosong.
+  if (str == null || str.isEmpty || str == 'null') {
+    return [];
+  }
+
+  final data = json.decode(str);
+
+  // Jika hasil decode adalah null (bisa terjadi jika JSON adalah string "null"),
+  // kembalikan juga list kosong.
+  if (data == null) {
+    return [];
+  }
+
+  // Jika semua aman, lanjutkan proses parsing seperti biasa.
+  return List<Imunisasi>.from(data.map((x) => Imunisasi.fromJson(x)));
+}
 
 // Fungsi untuk encode objek tunggal ke JSON
 String imunisasiToJson(Imunisasi data) => json.encode(data.toJson());
@@ -31,7 +46,6 @@ class Imunisasi {
     "id": id,
     "balita_id": balitaId,
     "jenis_imunisasi": jenisImunisasi,
-    // Format tanggal sesuai standar ISO 8601 (YYYY-MM-DD)
     "tanggal_imunisasi":
         "${tanggalImunisasi.year.toString().padLeft(4, '0')}-${tanggalImunisasi.month.toString().padLeft(2, '0')}-${tanggalImunisasi.day.toString().padLeft(2, '0')}",
   };

@@ -66,7 +66,7 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
       });
 
       try {
-        await _kunjunganService.CreateKunjunganBalita(
+        final kunjunganBaru = await _kunjunganService.CreateKunjunganBalita(
           widget.balita.id!,
           _selectedDate,
           // Menggunakan replaceAll untuk memastikan format angka benar
@@ -87,8 +87,8 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        // Kembali ke halaman sebelumnya dengan hasil 'true' untuk menandakan sukses
-        Navigator.of(context).pop(true);
+        // Kembali ke halaman sebelumnya dengan data baru untuk menandakan sukses
+        Navigator.of(context).pop(kunjunganBaru);
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

@@ -4,7 +4,7 @@ import 'package:flutter_application_1/models/KunjunganBalitaModel.dart';
 import 'package:http/http.dart' as http;
 
 class Kunjunganbalitaservice {
-  CreateKunjunganBalita(
+  Future<KunjunganModel> CreateKunjunganBalita(
     int balitaId,
     DateTime tanggalKunjungan,
     double beratBadan,
@@ -12,7 +12,6 @@ class Kunjunganbalitaservice {
     String statusGizi,
     String rambuGizi,
   ) async {
-    // Menggunakan http.post untuk request yang lebih sederhana dan modern.
     try {
       final response = await http.post(
         Uri.parse('$base_url/kunjungan-balita'),
@@ -35,7 +34,10 @@ class Kunjunganbalitaservice {
       // Kita juga cek 200 untuk kompatibilitas.
       if (response.statusCode == 201 || response.statusCode == 200) {
         print('Kunjungan berhasil dicatat. Status: ${response.statusCode}');
-        // Tidak perlu mengembalikan apa-apa, sukses ditandai dengan tidak adanya exception.
+        // API yang baik akan mengembalikan data yang baru dibuat.
+        // Kita parse dan kembalikan data tersebut.
+        final responseData = json.decode(response.body);
+        return KunjunganModel.fromJson(responseData['data']);
       } else {
         // Jika gagal, lemparkan Exception dengan pesan error dari server.
         throw Exception(

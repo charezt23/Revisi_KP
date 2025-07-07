@@ -1,40 +1,65 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/register_screen.dart';
+import 'package:flutter_application_1/API/authservice.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_application_1/API/authservice.dart';
-import 'home_screen.dart'
-    hide LoginBackground; // <-- Import HomeScreen untuk navigasi
+import 'login_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   // Controller untuk mengambil teks dari TextField
+  final _namaController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
-  // State untuk visibilitas password, remember me, dan loading
+  // State untuk visibilitas password dan loading
   bool _isPasswordVisible = false;
-  bool _rememberMe = false;
+  bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
 
   @override
   void dispose() {
+    _namaController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  // --- FUNGSI UNTUK LOGIKA LOGIN ---
-  void _login() async {
+  // --- FUNGSI UNTUK LOGIKA REGISTER ---
+  void _register() async {
     // Validasi input
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showErrorDialog('Email dan password tidak boleh kosong');
+    if (_namaController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
+      _showErrorDialog('Semua field harus diisi');
+      return;
+    }
+
+    // Validasi email format
+    if (!RegExp(
+      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+    ).hasMatch(_emailController.text.trim())) {
+      _showErrorDialog('Format email tidak valid');
+      return;
+    }
+
+    // Validasi password minimum 6 karakter
+    if (_passwordController.text.length < 6) {
+      _showErrorDialog('Password minimal 6 karakter');
+      return;
+    }
+
+    // Validasi konfirmasi password
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showErrorDialog('Password dan konfirmasi password tidak sama');
       return;
     }
 
@@ -44,26 +69,28 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Panggil AuthService untuk login
-      final loginResponse = await AuthService.login(
+      // TODO: Implement register API call
+      final registerResponse = await AuthService.register(
+        _namaController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
       );
 
-      if (loginResponse.success) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (registerResponse == false) {
+        _showErrorDialog('Registrasi gagal, silakan coba lagi');
+        return;
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(loginResponse.message),
+          const SnackBar(
+            content: Text('Registrasi berhasil! Silakan login'),
             backgroundColor: Colors.green,
           ),
         );
         await Future.delayed(const Duration(seconds: 4));
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
-      } else {
-        // Jika gagal, tampilkan pesan error
-        _showErrorDialog(loginResponse.message);
       }
     } catch (e) {
       // Handle error yang tidak terduga
@@ -86,45 +113,67 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor: Colors.grey[100],  Hapus background dari Scaffold
       resizeToAvoidBottomInset:
-          false, // Mencegah resize otomatis saat keyboard muncul
+          false, // Mengizinkan resize saat keyboard muncul
       body: Stack(
         children: [
           // Background di belakang
           const LoginBackground(),
 
-          // Konten di atas background
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
                 padding: EdgeInsets.only(
                   left: 32.0,
                   right: 32.0,
-                  top: 5.0,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 32.0,
+                  top: 10.0,
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    // Replace the Icon and "Selamat Datang" text with the image
                     Image.asset(
                       'assets/images/iconGambar.png', // Corrected path and filename
                       height: 200,
                     ),
-
-                    // Removed the "Selamat Datang" text
-                    //const SizedBox(height: 8),
                     Text(
-                      'Masuk untuk melanjutkan pencatatan',
+                      'Daftar Akun Baru',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
+                        fontSize: 24,
                         color: Colors.black87,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
+                    // Input Field Nama
+                    TextField(
+                      controller: _namaController,
+                      keyboardType: TextInputType.name,
+                      decoration: InputDecoration(
+                        hintText: 'Nama Lengkap',
+                        prefixIcon: const Icon(
+                          Icons.person_outline,
+                          color: Colors.black54,
+                        ),
+                        filled: true,
+                        fillColor: const Color.fromARGB(
+                          255,
+                          136,
+                          136,
+                          136,
+                        ).withOpacity(0.75),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 16,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
 
                     // Input Field Email
                     TextField(
@@ -193,53 +242,53 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
 
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Checkbox(
-                                activeColor: Colors.deepPurple,
-                                value: _rememberMe,
-                                onChanged:
-                                    (value) =>
-                                        setState(() => _rememberMe = value!),
-                              ),
-                              // Dibungkus Flexible agar teks tidak overflow di layar sempit
-                              Flexible(
-                                child: Text(
-                                  'Ingat Saya',
-                                  style: GoogleFonts.poppins(
-                                    color:
-                                        _rememberMe
-                                            ? Colors.deepPurple
-                                            : Colors.black87,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                    // Input Field Konfirmasi Password
+                    TextField(
+                      controller: _confirmPasswordController,
+                      obscureText: !_isConfirmPasswordVisible,
+                      decoration: InputDecoration(
+                        hintText: 'Konfirmasi Password',
+                        prefixIcon: const Icon(
+                          Icons.lock_outline,
+                          color: Colors.black54,
                         ),
-                        TextButton(
-                          onPressed: () {},
-                          child: Text(
-                            'Lupa Password?',
-                            style: GoogleFonts.poppins(
-                              color: Colors.deepPurple,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isConfirmPasswordVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                           ),
+                          onPressed:
+                              () => setState(
+                                () =>
+                                    _isConfirmPasswordVisible =
+                                        !_isConfirmPasswordVisible,
+                              ),
                         ),
-                      ],
+                        filled: true,
+                        fillColor: const Color.fromARGB(
+                          255,
+                          136,
+                          136,
+                          136,
+                        ).withOpacity(0.75),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 16,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 24),
 
-                    // Tombol Login Utama
+                    // Tombol Register
                     ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
+                      onPressed: _isLoading ? null : _register,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         backgroundColor: Colors.deepPurple,
@@ -259,7 +308,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               )
                               : Text(
-                                'MASUK',
+                                'DAFTAR',
                                 style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
@@ -268,11 +317,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                     ),
                     const SizedBox(height: 24),
+
+                    // Link ke Login
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "Belum punya akun?",
+                          "Sudah punya akun?",
                           style: GoogleFonts.poppins(
                             color: Colors.black87,
                             fontWeight: FontWeight.w500,
@@ -285,14 +336,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           onPressed: () {
-                            Navigator.of(context).push(
+                            Navigator.of(context).pushReplacement(
                               MaterialPageRoute(
-                                builder: (_) => const RegisterScreen(),
+                                builder: (_) => const LoginScreen(),
                               ),
                             );
                           },
                           child: Text(
-                            'Daftar di sini',
+                            'Masuk di sini',
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.bold,
                               color: Colors.deepPurple,

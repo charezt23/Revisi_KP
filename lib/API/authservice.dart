@@ -135,4 +135,36 @@ class AuthService {
       return false;
     }
   }
+
+  static Future<bool> register(
+    String name,
+    String email,
+    String password,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$base_url/register'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({'name': name, 'email': email, 'password': password}),
+    );
+
+    final Map<String, dynamic> responseData = jsonDecode(response.body);
+    print('Response Data: $responseData');
+    if (response.statusCode == 201) {
+      final registerResponse = responseData['success'] as bool;
+      return registerResponse;
+    } else {
+      if (responseData['success'] == false) {
+        // Jika ada pesan error dari server
+        final errorMessage = responseData['errors'] ?? 'Unknown error';
+        throw Exception('$errorMessage');
+      } else {
+        final errorMessage = responseData['errors'] ?? 'Unknown error';
+        print('Registration failed: $errorMessage');
+        throw Exception('$errorMessage');
+      }
+    }
+  }
 }

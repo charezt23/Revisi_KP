@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart ';
+import 'package:flutter/material.dart';
 import 'package:flutter_application_1/API/authservice.dart';
 import 'package:flutter_application_1/screens/kohort_form_screen.dart';
 import 'package:flutter_application_1/screens/kohort_detail_screen.dart';
@@ -6,22 +6,15 @@ import 'package:flutter_application_1/screens/login_screen.dart';
 import 'package:intl/intl.dart';
 import '../API/PosyanduService.dart';
 import '../models/posyanduModel.dart';
-// TODO: Buat atau sesuaikan screen berikut untuk bekerja dengan PosyanduModel
-// import 'posyandu_form_screen.dart';
-// import 'posyandu_detail_screen.dart';
 
 // ===================================================================
 // Widget untuk Background.
-// Bisa juga diletakkan di file terpisah (misal: widgets/login_background.dart)
-// dan di-import, tapi untuk kemudahan, kita gabungkan di sini.
 // ===================================================================
 class LoginBackground extends StatelessWidget {
   const LoginBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Pastikan path 'lib/images/BackgrounLogin.png' sudah benar
-    // dan sudah terdaftar di pubspec.yaml
     return Container(
       decoration: const BoxDecoration(
         image: DecorationImage(
@@ -30,14 +23,13 @@ class LoginBackground extends StatelessWidget {
         ),
       ),
       // Memberikan lapisan warna gelap agar gambar tidak terlalu terang
-      // dan teks lebih mudah dibaca.
       child: Container(
         color: const Color.fromARGB(
           255,
           255,
           255,
           255,
-        ).withOpacity(0.5), // Sesuaikan opasitas sesuai selera
+        ).withOpacity(0.5), // Sesuaikan opasitas
       ),
     );
   }
@@ -68,16 +60,15 @@ class _HomeScreenState extends State<HomeScreen> {
       _isLoading = true;
     });
 
-    // TODO: Ganti '1' dengan ID user yang sedang login.
-    // Anda mungkin perlu mendapatkan ID ini dari SharedPreferences setelah login.
+    // Mengambil data posyandu berdasarkan user yang login
     await _posyanduService.GetPosyanduByUser();
 
-    // Karena GetPosyanduByUser tidak mengembalikan apa-apa dan hanya mengisi
-    // list global, kita perlu memanggil setState setelahnya untuk me-render ulang UI.
-    setState(() {
-      // Data sekarang ada di variabel global `posyanduList`
-      _isLoading = false;
-    });
+    // Memanggil setState untuk me-render ulang UI dengan data baru
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   // Method untuk menampilkan info user
@@ -141,23 +132,73 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Method untuk menghapus Posyandu
+  Future<void> _hapusPosyandu(PosyanduModel posyandu) async {
+    final bool? konfirmasi = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Hapus'),
+          content: Text(
+            'Apakah Anda yakin ingin menghapus Posyandu "${posyandu.namaPosyandu}"? Semua data balita yang terkait akan ikut terhapus.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Hapus'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (konfirmasi == true) {
+      try {
+        // Panggil service untuk menghapus
+        await _posyanduService.DeletePosyandu(posyandu.id!);
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Posyandu "${posyandu.namaPosyandu}" berhasil dihapus.',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Muat ulang daftar untuk memperbarui UI
+        await _fetchPosyanduData();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menghapus: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Gunakan Stack untuk menumpuk background dengan konten
     return Stack(
       children: [
-        // LAPISAN 1: Widget background yang akan berada di paling belakang
+        // LAPISAN 1: Widget background
         const LoginBackground(),
 
-        // LAPISAN 2: Scaffold yang berisi semua UI (AppBar, Body, Tombol)
+        // LAPISAN 2: Scaffold yang berisi UI
         Scaffold(
-          // Atur background Scaffold menjadi transparan agar background di Stack terlihat
-          backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+          backgroundColor: Colors.transparent,
           appBar: AppBar(
             title: const Text('Manajer Posyandu'),
-            // Atur background AppBar juga menjadi transparan
-            backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-            // Hilangkan bayangan di bawah AppBar agar menyatu dengan background
+            backgroundColor: Colors.transparent,
             elevation: 0,
             actions: [
               // Menu untuk melihat info user dan logout
@@ -166,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (value == 'profile') {
                     // Tampilkan info user
                     final user = await AuthService.getCurrentUser();
-                    if (user != null) {
+                    if (user != null && mounted) {
                       _showUserInfo(user);
                     }
                   } else if (value == 'logout') {
@@ -208,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Belum ada data Posyandu. Tekan + untuk membuat.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.black87, // Warna diubah agar terbaca
+                        color: Colors.black87,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -246,16 +287,28 @@ class _HomeScreenState extends State<HomeScreen> {
                             subtitle: Text(
                               'Dibuat: ${posyandu.createdAt != null ? DateFormat('dd MMM yyyy').format(posyandu.createdAt!) : 'N/A'}',
                             ),
-                            trailing: const Icon(
-                              Icons.chevron_right,
-                              color: Colors.blue,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () => _hapusPosyandu(posyandu),
+                                  tooltip: 'Hapus Posyandu',
+                                ),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.blue,
+                                ),
+                              ],
                             ),
                             onTap: () {
-                              // Navigasi ke detail screen yang sudah dimodifikasi
+                              // Navigasi ke detail screen
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  // Mengirim data posyandu ke detail screen
                                   builder:
                                       (_) => KohortDetailScreen(
                                         posyandu: posyandu,
@@ -273,7 +326,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const KohortFormScreen()),
-              ).then((_) => _fetchPosyanduData());
+              ).then(
+                (_) => _fetchPosyanduData(),
+              ); // Muat ulang data setelah kembali
             },
             child: const Icon(Icons.add),
           ),

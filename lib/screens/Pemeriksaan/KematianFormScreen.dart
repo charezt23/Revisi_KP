@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/models/anggota_model.dart';
+import 'package:flutter_application_1/models/balitaModel.dart';
 import 'package:flutter_application_1/API/kematianService.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
 import 'package:intl/intl.dart';
 
 class KematianFormScreen extends StatefulWidget {
-  final Anggota anggota;
+  final BalitaModel balita;
 
-  const KematianFormScreen({super.key, required this.anggota});
+  const KematianFormScreen({super.key, required this.balita});
 
   @override
   State<KematianFormScreen> createState() => _KematianFormScreenState();
@@ -17,76 +17,80 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _tanggalController = TextEditingController();
   final _penyebabController = TextEditingController();
-
-  // Instance dari KematianService
   final KematianService _kematianService = KematianService();
+  bool _isSaving = false;
+  DateTime? _selectedDate;
 
-  // State untuk menangani proses loading
-  bool _isLoading = false;
+  @override
+  void dispose() {
+    _tanggalController.dispose();
+    _penyebabController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pilihTanggal() async {
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
     );
     if (picked != null) {
       setState(() {
-        _tanggalController.text = DateFormat('dd-MM-yyyy').format(picked);
+        _selectedDate = picked;
+        // Format tanggal yang akan ditampilkan di UI
+        _tanggalController.text = DateFormat(
+          'dd MMMM yyyy',
+          'id_ID',
+        ).format(picked);
       });
     }
   }
 
   Future<void> _simpanPencatatan() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate() || _isSaving) {
       return;
     }
 
     setState(() {
-      _isLoading = true;
+      _isSaving = true;
     });
 
     try {
-      // Mengubah format tanggal agar sesuai dengan standar API (yyyy-MM-dd)
-      final DateFormat displayFormat = DateFormat('dd-MM-yyyy');
-      final DateFormat apiFormat = DateFormat('yyyy-MM-dd');
-      final DateTime parsedDate = displayFormat.parse(_tanggalController.text);
-      final String formattedDateForApi = apiFormat.format(parsedDate);
+      // Pastikan tanggal sudah dipilih
+      if (_selectedDate == null) {
+        throw Exception("Tanggal kematian harus dipilih");
+      }
 
-      // Membuat Map dengan kunci yang benar sesuai permintaan server
+      // Format tanggal ke yyyy-MM-dd untuk dikirim ke API
+      final String formattedDateForApi = DateFormat(
+        'yyyy-MM-dd',
+      ).format(_selectedDate!);
+
       Map<String, dynamic> data = {
-        'balita_id': widget.anggota.id,
+        'balita_id': widget.balita.id,
         'tanggal_kematian': formattedDateForApi,
-        // --- PERBAIKAN DI SINI ---
-        'penyebab_kematian': _penyebabController.text,
+        'penyebab': _penyebabController.text, // Kunci disesuaikan
       };
 
-      // Memanggil service untuk membuat data kematian
-      // Disini kita menggunakan service yang mengembalikan Future<bool>
-      bool isSuccess = await _kematianService.createKematian(data);
+      // Panggil service. Jika ada error, akan dilempar ke blok catch.
+      await _kematianService.createKematian(data);
 
-      if (isSuccess && mounted) {
+      // Jika kode mencapai baris ini, berarti sukses.
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Data kematian untuk ${widget.anggota.nama} berhasil dicatat.',
+              'Data kematian untuk ${widget.balita.nama} berhasil dicatat.',
             ),
             backgroundColor: Colors.green,
           ),
         );
+        // Kirim sinyal 'true' kembali ke halaman detail untuk refresh
         Navigator.of(context).pop(true);
-      } else if (!isSuccess && mounted) {
-        // Jika service mengembalikan false, tampilkan pesan error umum
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gagal menyimpan data. Silakan coba lagi.'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     } catch (e) {
-      // Menangani error dari 'throw Exception' jika service Anda menggunakannya
+      // Menangani error dari 'throw Exception'
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -98,7 +102,7 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
     } finally {
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          _isSaving = false;
         });
       }
     }
@@ -136,7 +140,7 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Anggota: ${widget.anggota.nama}',
+                          'Balita: ${widget.balita.nama}',
                           style: Theme.of(context).textTheme.titleMedium,
                           textAlign: TextAlign.center,
                         ),
@@ -163,10 +167,11 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
                           decoration: const InputDecoration(
                             labelText: 'Penyebab Kematian',
                             border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.medical_services_outlined),
+                            prefixIcon: Icon(
+                              Icons.medical_information_outlined,
+                            ),
                           ),
                           validator: (value) {
-                            // Menambahkan validasi agar field ini tidak kosong
                             if (value == null || value.isEmpty) {
                               return 'Penyebab kematian tidak boleh kosong';
                             }
@@ -175,13 +180,13 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(
-                          onPressed: _isLoading ? null : _simpanPencatatan,
+                          onPressed: _isSaving ? null : _simpanPencatatan,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: Colors.red.shade700,
                           ),
                           child:
-                              _isLoading
+                              _isSaving
                                   ? const SizedBox(
                                     height: 24,
                                     width: 24,

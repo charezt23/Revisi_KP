@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/API/PosyanduService.dart';
-import 'package:flutter_application_1/screens/home_screen.dart';
+import 'package:flutter_application_1/screens/manajer_posyandu.dart';
 
 class KohortFormScreen extends StatefulWidget {
   // Meskipun bernama KohortFormScreen, form ini akan membuat data Posyandu

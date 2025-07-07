@@ -12,6 +12,8 @@ class BalitaFormScreen extends StatefulWidget {
   State<BalitaFormScreen> createState() => _BalitaFormScreenState();
 }
 
+bool _isLoading = false;
+
 // Ubah stateful widget untuk menangani form
 class _BalitaFormScreenState extends State<BalitaFormScreen> {
   final _formKey = GlobalKey<FormState>();
@@ -87,60 +89,73 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
   }
 
   void _simpanData() async {
-    if (_formKey.currentState!.validate()) {
-      // Konversi nilai jenis kelamin ke format yang diharapkan backend ('L' atau 'P')
-      final jenisKelaminValue = _jenisKelamin == 'Laki-laki' ? 'L' : 'P';
-      try {
-        if (widget.balita == null) {
-          // Tambah baru
-          await _balitaService.CreateBalita(
-            _namaController.text,
-            _nikController.text,
-            _tanggalLahir,
-            _alamatController.text,
-            jenisKelaminValue,
-            widget.posyanduId,
-            _namaIbuController.text,
-            _bukuKIAStatus, // Kirim status 'ada' atau 'tidak_ada'
-          );
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Data balita berhasil ditambahkan.'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          // Edit
-          await _balitaService.UpdateBalita(
-            widget.balita!.id!,
-            _namaController.text,
-            _nikController.text,
-            _tanggalLahir,
-            _alamatController.text,
-            jenisKelaminValue,
-            widget.posyanduId,
-            _namaIbuController.text,
-            _bukuKIAStatus, // Kirim status 'ada' atau 'tidak_ada'
-          );
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Data balita berhasil diperbarui.'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+    // Hentikan jika form tidak valid atau sedang dalam proses menyimpan
+    if (!_formKey.currentState!.validate() || _isLoading) {
+      return;
+    }
 
-        Navigator.pop(context, true); // Kirim sinyal berhasil kembali
-      } catch (e) {
-        if (!mounted) return;
+    // Mulai loading state, tombol tidak akan bisa ditekan lagi
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      String pesanSukses;
+      final jenisKelaminValue = _jenisKelamin == 'Laki-laki' ? 'L' : 'P';
+
+      if (widget.balita == null) {
+        // Tambah baru
+        await _balitaService.CreateBalita(
+          _namaController.text,
+          _nikController.text,
+          _tanggalLahir,
+          _alamatController.text,
+          jenisKelaminValue,
+          widget.posyanduId,
+          _namaIbuController.text,
+          _bukuKIAStatus,
+        );
+        pesanSukses = 'Data balita berhasil ditambahkan.';
+      } else {
+        // Edit
+        await _balitaService.UpdateBalita(
+          widget.balita!.id!,
+          _namaController.text,
+          _nikController.text,
+          _tanggalLahir,
+          _alamatController.text,
+          jenisKelaminValue,
+          widget.posyanduId,
+          _namaIbuController.text,
+          _bukuKIAStatus,
+        );
+        pesanSukses = 'Data balita berhasil diperbarui.';
+      }
+
+      // Jika proses di atas berhasil tanpa error, lanjutkan ke sini
+      if (mounted) {
+        // Tampilkan satu pesan sukses saja
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(pesanSukses), backgroundColor: Colors.green),
+        );
+        // Kirim sinyal berhasil dan tutup halaman
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Terjadi kesalahan: $e'),
             backgroundColor: Colors.red,
           ),
         );
+      }
+    } finally {
+      // Apapun hasilnya (sukses atau gagal), hentikan loading state
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }

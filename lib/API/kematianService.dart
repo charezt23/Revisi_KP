@@ -3,129 +3,110 @@ import 'package:http/http.dart' as http;
 import '../models/kematian.dart'; // Pastikan path ini benar
 import '../API/BaseURL.dart'; // Pastikan path ini benar
 
-// Anda bisa menambahkan list global jika diperlukan, seperti pada contoh Kunjungan
-// List<Kematian> daftarKematianGlobal = [];
-
+/// Service untuk mengelola data kematian balita melalui API.
 class KematianService {
-  // --- CREATE ---
-  // Mengembalikan true jika sukses, false jika gagal.
-  Future<bool> createKematian(Map<String, dynamic> data) async {
+  /// Membuat data kematian baru.
+  /// Melemparkan Exception jika gagal.
+  Future<void> createKematian(Map<String, dynamic> data) async {
     try {
-      var request = http.Request(
-        'POST',
-        Uri.parse('$base_url/kematian'), // Menggunakan base_url
+      final response = await http.post(
+        Uri.parse('$base_url/kematian'),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Accept': 'application/json',
+        },
+        body: json.encode(data),
       );
-      request.headers.addAll({
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Accept': 'application/json',
-      });
-      request.body = json.encode(data);
 
-      http.StreamedResponse response = await request.send();
-
-      // API Resource Controller biasanya mengembalikan 201 untuk create
-      if (response.statusCode == 201) {
-        print('Data kematian berhasil dibuat. Status: ${response.statusCode}');
-        return true;
-      } else {
-        final responseBody = await response.stream.bytesToString();
-        print(
-          'Gagal membuat data kematian. Status: ${response.statusCode}, Body: $responseBody',
+      // API yang baik mengembalikan 201 (Created) saat sukses membuat data baru.
+      if (response.statusCode != 201) {
+        // Jika gagal, lemparkan exception dengan detail dari server.
+        throw Exception(
+          'Gagal membuat data kematian. Status: ${response.statusCode}, Body: ${response.body}',
         );
-        return false;
       }
+      print('Data kematian berhasil dibuat.');
     } catch (e) {
-      print('Terjadi exception saat membuat data kematian: $e');
-      return false;
+      // Lempar kembali exception agar bisa ditangani di UI.
+      throw Exception('Terjadi kesalahan saat membuat data kematian: $e');
     }
   }
 
-  // --- DELETE ---
-  // Mengembalikan true jika sukses, false jika gagal.
-  Future<bool> deleteKematian(int id) async {
+  /// Menghapus data kematian berdasarkan ID balita.
+  /// Melemparkan Exception jika gagal.
+  Future<void> deleteKematian(int balitaId) async {
     try {
-      var request = http.Request('DELETE', Uri.parse('$base_url/kematian/$id'));
-      request.headers.addAll({'Accept': 'application/json'});
+      final response = await http.delete(
+        Uri.parse(
+          '$base_url/kematian/balita/$balitaId',
+        ), // Endpoint disesuaikan
+        headers: {'Accept': 'application/json'},
+      );
 
-      http.StreamedResponse response = await request.send();
-
-      // API Resource Controller biasanya mengembalikan 200 atau 204 untuk delete
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        print('Data kematian berhasil dihapus. Status: ${response.statusCode}');
-        return true;
-      } else {
-        final responseBody = await response.stream.bytesToString();
-        print(
-          'Gagal menghapus data kematian. Status: ${response.statusCode}, Body: $responseBody',
+      // Status 200 (OK) atau 204 (No Content) adalah tanda sukses.
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception(
+          'Gagal menghapus data kematian. Status: ${response.statusCode}, Body: ${response.body}',
         );
-        return false;
       }
+      print('Data kematian berhasil dihapus.');
     } catch (e) {
-      print('Terjadi exception saat menghapus data kematian: $e');
-      return false;
+      throw Exception('Terjadi kesalahan saat menghapus data kematian: $e');
     }
   }
 
-  // --- GET (Contoh Tambahan) ---
-  // Fungsi ini bisa Anda tambahkan jika API Anda menyediakan endpoint untuk GET
-  Future<Kematian?> getKematian(int id) async {
+  /// Mengambil data kematian berdasarkan ID balita.
+  /// Mengembalikan objek Kematian jika ada, atau null jika tidak ditemukan (404).
+  Future<Kematian?> getKematian(int balitaId) async {
     try {
+      // Pastikan endpoint Anda benar, biasanya berdasarkan ID balita
       final response = await http.get(
-        Uri.parse('$base_url/kematian/$id'),
+        Uri.parse('$base_url/kematian/balita/$balitaId'),
         headers: {'Accept': 'application/json'},
       );
 
       if (response.statusCode == 200) {
-        Map<String, dynamic> decodedResponse = json.decode(response.body);
-        return Kematian.fromJson(decodedResponse['data']);
+        final decodedResponse = json.decode(response.body);
+        // Pastikan response memiliki data sebelum di-parse
+        if (decodedResponse['data'] != null) {
+          return Kematian.fromJson(decodedResponse['data']);
+        }
+        return null; // Bisa jadi sukses tapi data kosong
       } else if (response.statusCode == 404) {
-        // Ini adalah kasus yang wajar: tidak ada data kematian untuk balita ini.
-        // Kita kembalikan null secara diam-diam tanpa mencatat "error".
+        // Kasus normal: tidak ada data kematian untuk balita ini.
         return null;
       } else {
-        // Untuk error lain, kita lempar exception agar bisa ditangani oleh FutureBuilder.
-        print(
-          'Gagal memuat data kematian: ${response.statusCode} ${response.reasonPhrase}',
-        );
+        // Untuk error lain, lemparkan exception.
         throw Exception(
           'Gagal memuat data kematian: Status ${response.statusCode}',
         );
       }
     } catch (e) {
-      print('Terjadi exception saat mengambil data kematian: $e');
-      // Lempar kembali exception agar UI bisa menampilkan state error.
       throw Exception('Gagal terhubung ke server: $e');
     }
   }
 
-  // --- UPDATE (Contoh Tambahan) ---
-  // Fungsi ini bisa Anda tambahkan jika API Anda menyediakan endpoint untuk UPDATE
-  Future<bool> updateKematian(int id, Map<String, dynamic> data) async {
+  /// Memperbarui data kematian.
+  /// Melemparkan Exception jika gagal.
+  Future<void> updateKematian(int id, Map<String, dynamic> data) async {
     try {
-      var request = http.Request('PUT', Uri.parse('$base_url/kematian/$id'));
-      request.headers.addAll({
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Accept': 'application/json',
-      });
-      request.body = json.encode(data);
+      final response = await http.put(
+        Uri.parse('$base_url/kematian/$id'),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Accept': 'application/json',
+        },
+        body: json.encode(data),
+      );
 
-      http.StreamedResponse response = await request.send();
-
-      if (response.statusCode == 200) {
-        print(
-          'Data kematian berhasil diperbarui. Status: ${response.statusCode}',
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Gagal memperbarui data kematian. Status: ${response.statusCode}, Body: ${response.body}',
         );
-        return true;
-      } else {
-        final responseBody = await response.stream.bytesToString();
-        print(
-          'Gagal memperbarui data kematian. Status: ${response.statusCode}, Body: $responseBody',
-        );
-        return false;
       }
+      print('Data kematian berhasil diperbarui.');
     } catch (e) {
-      print('Terjadi exception saat memperbarui data kematian: $e');
-      return false;
+      throw Exception('Terjadi kesalahan saat memperbarui data kematian: $e');
     }
   }
 }

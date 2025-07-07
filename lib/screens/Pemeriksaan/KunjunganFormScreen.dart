@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/API/KunjunganBalitaService.dart';
+import 'package:flutter_application_1/models/KunjunganBalitaModel.dart';
 import 'package:flutter_application_1/models/balitaModel.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
 import 'package:intl/intl.dart';
 
 class KunjunganFormScreen extends StatefulWidget {
   final BalitaModel balita;
-
-  const KunjunganFormScreen({super.key, required this.balita});
+  final KunjunganModel? kunjunganToEdit;
+  const KunjunganFormScreen({
+    super.key,
+    required this.balita,
+    this.kunjunganToEdit,
+  });
 
   @override
   State<KunjunganFormScreen> createState() => _KunjunganFormScreenState();

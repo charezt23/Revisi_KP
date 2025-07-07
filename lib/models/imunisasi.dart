@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:flutter_application_1/models/balitaModel.dart';
+
 // Fungsi untuk decode list dari JSON (Sudah diperbarui dan aman dari null)
-List<Imunisasi> imunisasiFromJson(String? str) {
+List<Imunisasi> imunisasiFromJson(String? str, {required BalitaModel balita}) {
   // Jika string JSON null, kosong, atau berisi 'null', kembalikan list kosong.
   if (str == null || str.isEmpty || str == 'null') {
     return [];

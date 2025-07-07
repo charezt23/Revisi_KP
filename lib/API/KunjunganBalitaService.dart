@@ -53,7 +53,7 @@ class Kunjunganbalitaservice {
   Future<List<KunjunganModel>> GetKunjunganbalitaByBalita(id) async {
     try {
       final response = await http.get(
-        Uri.parse('$base_url/kunjungan-balita/$id'),
+        Uri.parse('$base_url/kunjungan-balita/balita/$id'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -129,7 +129,7 @@ class Kunjunganbalitaservice {
     }
   }
 
-  DeleteKunjunganBalita(int id) async {
+  Future<bool> deleteKunjungan(int id) async {
     try {
       var request = http.Request(
         'DELETE',

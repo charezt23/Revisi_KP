@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/models/anggota_model.dart';
+import 'package:flutter_application_1/models/balitaModel.dart';
+import 'package:flutter_application_1/models/imunisasi.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_application_1/API/ImunisasiService.dart';
 
 class ImunisasiFormScreen extends StatefulWidget {
-  final Anggota anggota;
+  final BalitaModel balita;
 
-  const ImunisasiFormScreen({super.key, required this.anggota});
+  final dynamic imunisasiToEdit;
+
+  const ImunisasiFormScreen({
+    super.key,
+    required this.balita,
+    this.imunisasiToEdit,
+  });
 
   @override
   State<ImunisasiFormScreen> createState() => _ImunisasiFormScreenState();
@@ -18,39 +26,81 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
   String? _jenisImunisasiTerpilih;
   final List<String> _opsiImunisasi = ['DPT', 'Campak'];
 
+  final _imunisasiService = ImunisasiService();
+  DateTime? _selectedDate;
+  bool _isLoading = false;
+
   Future<void> _pilihTanggal() async {
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
     );
     if (picked != null) {
       setState(() {
+        _selectedDate = picked;
         _tanggalController.text = DateFormat('dd-MM-yyyy').format(picked);
       });
     }
   }
 
-  void _simpanPemeriksaan() {
+  void _simpanPemeriksaan() async {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implementasikan logika penyimpanan data imunisasi ke database.
-      // Contoh: await DummyDataService().addImunisasi(
-      //   anggotaId: widget.anggota.id!,
-      //   jenis: _jenisImunisasiTerpilih!,
-      //   tanggal: _tanggalController.text,
-      // );
+      setState(() {
+        _isLoading = true;
+      });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Imunisasi "$_jenisImunisasiTerpilih" untuk ${widget.anggota.nama} berhasil disimpan.',
+      try {
+        // Sesuaikan payload dengan yang diharapkan oleh service (Map<String, dynamic>)
+        final data = {
+          'balita_id': widget.balita.id!,
+          'jenis_imunisasi': _jenisImunisasiTerpilih!,
+          'tanggal_imunisasi': DateFormat('yyyy-MM-dd').format(_selectedDate!),
+        };
+
+        // Panggil service dan tangkap hasilnya (boolean)
+        final bool isSuccess = await _imunisasiService.createImunisasi(data);
+
+        if (!mounted) return;
+
+        if (isSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Imunisasi "$_jenisImunisasiTerpilih" untuk ${widget.balita.nama} berhasil disimpan.',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Kembali ke halaman sebelumnya dengan nilai true untuk menandakan sukses
+          Navigator.of(context).pop(true);
+        } else {
+          // Tampilkan error jika service mengembalikan false
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Gagal menyimpan data. Server merespon dengan error.',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan: $e'),
+            backgroundColor: Colors.red,
           ),
-          backgroundColor: Colors.green,
-        ),
-      );
-      // Kembali ke halaman detail kohort setelah menyimpan
-      Navigator.of(context).pop();
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -92,7 +142,7 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Anggota: ${widget.anggota.nama}',
+                          'Balita: ${widget.balita.nama}',
                           style: Theme.of(context).textTheme.titleMedium,
                           textAlign: TextAlign.center,
                         ),
@@ -142,11 +192,21 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(
-                          onPressed: _simpanPemeriksaan,
+                          onPressed: _isLoading ? null : _simpanPemeriksaan,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: const Text('Simpan'),
+                          child:
+                              _isLoading
+                                  ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 3,
+                                    ),
+                                  )
+                                  : const Text('Simpan'),
                         ),
                       ],
                     ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/API/BalitaService.dart'; // Menggunakan service API
 import 'package:flutter_application_1/models/posyanduModel.dart'; // Menggunakan model Posyandu
 import 'package:flutter_application_1/models/balitaModel.dart';
-import 'package:flutter_application_1/screens/anggota_form_screen.dart';
+import 'package:flutter_application_1/screens/Balita_Form_Screen.dart';
 import 'package:flutter_application_1/screens/balita_detail_screen.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
 

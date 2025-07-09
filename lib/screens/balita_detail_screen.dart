@@ -417,7 +417,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     String jenisKelaminLengkap =
         (balita.jenisKelamin == 'L') ? 'Laki-laki' : 'Perempuan';
     String statusBukuKIA =
-        (balita.bukuKIA?.toLowerCase() == 'ada') ? 'Ada' : 'Tidak Ada';
+        (balita.bukuKIA.toLowerCase() == 'ada') ? 'Ada' : 'Tidak Ada';
 
     return Card(
       color: isDeceased ? Colors.grey.shade200 : null,

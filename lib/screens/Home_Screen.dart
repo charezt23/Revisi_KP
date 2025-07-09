@@ -188,10 +188,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // LAPISAN 2: Scaffold yang berisi UI
         Scaffold(
-          backgroundColor: Colors.transparent,
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
           appBar: AppBar(
             title: const Text('Manajer Posyandu'),
-            backgroundColor: Colors.transparent,
+            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
             elevation: 0,
             actions: [
               // Tombol ikon untuk logout

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/Balita_Form_Screen.dart';
 import 'package:intl/intl.dart';
-import 'dart:math';
 
 // Import services, models, dan file yang relevan
 import '../API/ImunisasiService.dart';
@@ -66,24 +65,19 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
   void initState() {
     super.initState();
     _currentBalita = widget.balita;
-    // Mengatur locale untuk format tanggal Indonesia
     Intl.defaultLocale = 'id_ID';
-    _refreshData();
+    _detailData = _fetchData();
   }
 
   // --- LOGIKA DATA ---
-
-  /// Fungsi utama untuk refresh data, sama seperti menekan ikon refresh.
   Future<void> _refreshData() async {
     if (mounted) {
       setState(() {
         _detailData = _fetchData();
       });
     }
-    await _detailData;
   }
 
-  /// Mengambil semua data dari API secara bersamaan.
   Future<BalitaDetailData> _fetchData() async {
     final results = await Future.wait([
       _balitaService.GetBalitaData(_currentBalita.id!),
@@ -93,34 +87,51 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     ]);
 
     final balitaTerbaru = results[0] as BalitaModel;
-    final riwayatKunjungan = results[1] as List<KunjunganModel>;
-    final riwayatImunisasi = results[2] as List<Imunisasi>;
-    final dataKematian = results[3] as Kematian?;
-
-    // Perbarui state balita jika ada perubahan nama/NIK
-    if (mounted &&
-        (balitaTerbaru.nama != _currentBalita.nama ||
-            balitaTerbaru.nik != _currentBalita.nik)) {
+    if (mounted) {
       setState(() {
         _currentBalita = balitaTerbaru;
       });
     }
 
-    // Kembalikan semua data yang sudah diurutkan
     return BalitaDetailData(
       riwayatKunjungan:
-          riwayatKunjungan
+          (results[1] as List<KunjunganModel>)
             ..sort((a, b) => b.tanggalKunjungan.compareTo(a.tanggalKunjungan)),
       riwayatImunisasi:
-          riwayatImunisasi
+          (results[2] as List<Imunisasi>)
             ..sort((a, b) => b.tanggalImunisasi.compareTo(a.tanggalImunisasi)),
-      dataKematian: dataKematian,
+      dataKematian: results[3] as Kematian?,
     );
   }
 
-  // --- LOGIKA AKSI (EDIT, DELETE, TAMBAH) ---
+  List<PemeriksaanItem> _gabungkanDanUrutkanRiwayat(BalitaDetailData data) {
+    final semuaRiwayat = [
+      if (data.dataKematian != null)
+        PemeriksaanItem(
+          tanggal: data.dataKematian!.tanggalKematian,
+          jenis: 'Kematian',
+          data: data.dataKematian!,
+        ),
+      ...data.riwayatKunjungan.map(
+        (k) => PemeriksaanItem(
+          tanggal: k.tanggalKunjungan,
+          jenis: 'Kunjungan',
+          data: k,
+        ),
+      ),
+      ...data.riwayatImunisasi.map(
+        (i) => PemeriksaanItem(
+          tanggal: i.tanggalImunisasi,
+          jenis: 'Imunisasi',
+          data: i,
+        ),
+      ),
+    ];
+    semuaRiwayat.sort((a, b) => b.tanggal.compareTo(a.tanggal));
+    return semuaRiwayat;
+  }
 
-  /// Menampilkan dialog untuk memilih jenis pemeriksaan baru.
+  // --- LOGIKA AKSI (EDIT, DELETE, TAMBAH) ---
   Future<void> _lakukanPemeriksaan() async {
     final jenis = await showDialog<JenisPemeriksaan>(
       context: context,
@@ -157,29 +168,38 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     );
 
     if (jenis == null || !mounted) return;
-
     final Widget nextPage = switch (jenis) {
       JenisPemeriksaan.kunjungan => KunjunganFormScreen(balita: _currentBalita),
       JenisPemeriksaan.imunisasi => ImunisasiFormScreen(balita: _currentBalita),
       JenisPemeriksaan.kematian => KematianFormScreen(balita: _currentBalita),
     };
-
-    // Buka form dan tunggu hasilnya.
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => nextPage),
     );
-    // Jika form ditutup dengan sinyal 'true', maka refresh data.
-    if (result == true) {
-      _refreshData();
-    }
+    if (result == true) _refreshData();
   }
 
-  /// Menghapus data balita secara keseluruhan.
   Future<void> _deleteBalita() async {
-    final bool? confirm = await _showConfirmationDialog(
-      'Hapus Balita',
-      'Anda yakin ingin menghapus data balita "${_currentBalita.nama}"? Tindakan ini tidak dapat diurungkan.',
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Hapus Balita'),
+            content: Text(
+              'Anda yakin ingin menghapus data balita "${_currentBalita.nama}"?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
     );
     if (confirm == true && mounted) {
       try {
@@ -202,139 +222,38 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     }
   }
 
-  /// Menangani aksi edit atau hapus pada setiap item riwayat.
-  Future<void> _handlePemeriksaanAction({
-    required PemeriksaanItem item,
-    required bool isEdit,
-  }) async {
-    // --- LOGIKA UNTUK EDIT ---
-    if (isEdit) {
-      Widget? nextPage;
-      if (item.jenis == 'Kunjungan') {
-        nextPage = KunjunganFormScreen(
-          balita: _currentBalita,
-          kunjunganToEdit: item.data as KunjunganModel,
-        );
-      } else if (item.jenis == 'Imunisasi') {
-        nextPage = ImunisasiFormScreen(
-          balita: _currentBalita,
-          imunisasiToEdit: item.data as Imunisasi,
-        );
-      } else if (item.jenis == 'Kematian') {
-        nextPage = KematianFormScreen(
-          balita: _currentBalita,
-          kematianToEdit: item.data as Kematian,
-        );
-      }
-
-      if (nextPage != null && mounted) {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => nextPage!),
-        );
-        // Jika form edit ditutup dengan sinyal 'true', maka refresh data.
-        if (result == true) {
-          _refreshData();
-        }
-      }
-    }
-    // --- LOGIKA UNTUK HAPUS ---
-    else {
-      final bool? confirm = await _showConfirmationDialog(
-        'Hapus Riwayat',
-        'Anda yakin ingin menghapus riwayat ${item.jenis} ini?',
-      );
-      if (confirm == true && mounted) {
-        try {
-          bool success = false;
-          if (item.jenis == 'Kunjungan') {
-            success = await _kunjunganService.deleteKunjungan(item.data.id!);
-          } else if (item.jenis == 'Imunisasi') {
-            success = await _imunisasiService.deleteImunisasi(item.data.id!);
-          } else if (item.jenis == 'Kematian') {
-            success = await _kematianService.deleteKematian(item.data.id!);
-          }
-
-          if (success) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Riwayat ${item.jenis} berhasil dihapus.'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            // Langsung refresh data setelah berhasil hapus.
-            _refreshData();
-          } else {
-            throw Exception('Gagal menghapus dari service.');
-          }
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Gagal menghapus: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  /// Menampilkan dialog konfirmasi sebelum menghapus.
-  Future<bool?> _showConfirmationDialog(String title, String content) {
-    return showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(title),
-            content: Text(content),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Batal'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-              ),
-            ],
-          ),
-    );
-  }
-
   // --- UI BUILDER ---
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<BalitaDetailData>(
       future: _detailData,
       builder: (context, snapshot) {
-        Widget body;
-        String appBarTitle = 'Detail ${_currentBalita.nama}';
-        bool isDeceased = false;
-        Widget? fab;
-
         if (snapshot.connectionState == ConnectionState.waiting) {
-          body = const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          body = Center(child: Text('Gagal memuat data: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data == null) {
-          body = const Center(child: Text('Data tidak ditemukan.'));
-        } else {
-          final detailData = snapshot.data!;
-          isDeceased = detailData.dataKematian != null;
-          if (isDeceased) {
-            appBarTitle += ' (Meninggal)';
-          }
-          body = RefreshIndicator(
-            onRefresh: _refreshData,
-            child: _buildContent(detailData),
+          return Scaffold(
+            appBar: AppBar(title: Text('Memuat...')),
+            body: const Center(child: CircularProgressIndicator()),
           );
-          if (!isDeceased) {
-            fab = FloatingActionButton(
-              onPressed: _lakukanPemeriksaan,
-              tooltip: 'Lakukan Pemeriksaan',
-              child: const Icon(Icons.checklist_rtl),
-            );
-          }
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(title: Text('Error')),
+            body: Center(child: Text('Gagal memuat data: ${snapshot.error}')),
+          );
+        }
+        if (!snapshot.hasData) {
+          return Scaffold(
+            appBar: AppBar(title: Text('Tidak Ditemukan')),
+            body: const Center(child: Text('Data tidak ditemukan.')),
+          );
+        }
+
+        final detailData = snapshot.data!;
+        final bool isDeceased =
+            _currentBalita.tanggalKematian != null ||
+            detailData.dataKematian != null;
+        String appBarTitle = 'Detail ${_currentBalita.nama}';
+        if (isDeceased) {
+          appBarTitle += ' (Meninggal)';
         }
 
         return Scaffold(
@@ -348,48 +267,36 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
               ),
             ],
           ),
-          body: body,
-          floatingActionButton: fab,
+          body: RefreshIndicator(
+            onRefresh: _refreshData,
+            child: _buildContent(detailData),
+          ),
+          floatingActionButton:
+              isDeceased
+                  ? null
+                  : FloatingActionButton(
+                    onPressed: _lakukanPemeriksaan,
+                    tooltip: 'Lakukan Pemeriksaan',
+                    child: const Icon(Icons.checklist_rtl),
+                  ),
         );
       },
     );
   }
 
   Widget _buildContent(BalitaDetailData data) {
-    final isDeceased = data.dataKematian != null;
-    // Menggabungkan semua riwayat menjadi satu list untuk ditampilkan berurutan
-    final semuaRiwayat = [
-      if (isDeceased)
-        PemeriksaanItem(
-          tanggal: data.dataKematian!.tanggalKematian,
-          jenis: 'Kematian',
-          data: data.dataKematian!,
-        ),
-      ...data.riwayatKunjungan.map(
-        (k) => PemeriksaanItem(
-          tanggal: k.tanggalKunjungan,
-          jenis: 'Kunjungan',
-          data: k,
-        ),
-      ),
-      ...data.riwayatImunisasi.map(
-        (i) => PemeriksaanItem(
-          tanggal: i.tanggalImunisasi,
-          jenis: 'Imunisasi',
-          data: i,
-        ),
-      ),
-    ]..sort((a, b) => b.tanggal.compareTo(a.tanggal));
-
     return Stack(
       children: [
         const LoginBackground(),
         ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
-            _buildInfoDasar(isDeceased: isDeceased),
+            // Kirim objek Kematian langsung ke widget info dasar
+            _buildInfoDasar(dataKematian: data.dataKematian),
             const SizedBox(height: 16),
-            if (!isDeceased) ...[
+
+            // Hanya tampilkan ringkasan jika balita masih hidup
+            if (data.dataKematian == null) ...[
               _buildRingkasanPemeriksaanTerakhir(
                 jenis: 'Kunjungan',
                 riwayat: data.riwayatKunjungan,
@@ -403,7 +310,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
               ),
               const SizedBox(height: 16),
             ],
-            _buildSemuaRiwayatPemeriksaan(semuaRiwayat),
+            _buildSemuaRiwayatPemeriksaan(_gabungkanDanUrutkanRiwayat(data)),
           ],
         ),
       ],
@@ -412,15 +319,14 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
 
   // --- WIDGET HELPER ---
 
-  Widget _buildInfoDasar({bool isDeceased = false}) {
+  // <-- PERUBAHAN UTAMA DI SINI -->
+  Widget _buildInfoDasar({required Kematian? dataKematian}) {
     final balita = _currentBalita;
-    String jenisKelaminLengkap =
-        (balita.jenisKelamin == 'L') ? 'Laki-laki' : 'Perempuan';
-    String statusBukuKIA =
-        (balita.bukuKIA.toLowerCase() == 'ada') ? 'Ada' : 'Tidak Ada';
+    final bool isDeceased = dataKematian != null;
 
     return Card(
-      color: isDeceased ? Colors.grey.shade200 : null,
+      color: isDeceased ? Colors.red.withOpacity(0.05) : null,
+      elevation: 4,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -428,15 +334,19 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Text(
                     balita.nama,
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: isDeceased ? Colors.red.shade700 : null,
+                    ),
                   ),
                 ),
                 if (!isDeceased)
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit, color: Colors.blue),
@@ -452,8 +362,12 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
                                   ),
                             ),
                           );
-                          // Pola konsisten: panggil refresh jika form sukses
-                          if (result == true && mounted) {
+                          if (result != null &&
+                              result is BalitaModel &&
+                              mounted) {
+                            setState(() {
+                              _currentBalita = result;
+                            });
                             _refreshData();
                           }
                         },
@@ -468,14 +382,35 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
               ],
             ),
             const Divider(),
+
+            // Tampilkan detail kematian secara eksplisit di atas jika ada
+            if (isDeceased) ...[
+              Text(
+                'Telah Meninggal Dunia',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade700,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tanggal: ${DateFormat('dd MMMM yyyy').format(dataKematian!.tanggalKematian)}',
+              ),
+              Text('Penyebab: ${dataKematian.penyebab ?? "Tidak dicatat"}'),
+              const Divider(),
+            ],
+
             Text('NIK: ${balita.nik}'),
             Text('Nama Ibu: ${balita.namaIbu}'),
             Text(
               'Tgl Lahir: ${DateFormat('dd MMMM yyyy').format(balita.tanggalLahir)}',
             ),
-            Text('Jenis Kelamin: $jenisKelaminLengkap'),
+            Text(
+              'Jenis Kelamin: ${balita.jenisKelamin == "L" ? "Laki-laki" : "Perempuan"}',
+            ),
             Text('Alamat: ${balita.alamat}'),
-            Text('Buku KIA: $statusBukuKIA'),
+            Text('Buku KIA: ${balita.bukuKIA}'),
           ],
         ),
       ),
@@ -497,8 +432,8 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
             : (itemTerbaru as Imunisasi).tanggalImunisasi;
     final detail =
         jenis == 'Kunjungan'
-            ? 'Berat: ${(itemTerbaru as KunjunganModel).beratBadan} kg, Tinggi: ${(itemTerbaru as KunjunganModel).tinggiBadan} cm'
-            : 'Jenis: ${(itemTerbaru as Imunisasi).jenisImunisasi}';
+            ? 'Berat: ${itemTerbaru.beratBadan} kg, Tinggi: ${itemTerbaru.tinggiBadan} cm'
+            : 'Jenis: ${itemTerbaru.jenisImunisasi}';
     return Card(
       color: color.withOpacity(0.1),
       child: Padding(
@@ -506,21 +441,9 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    '$jenis Terakhir',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.history, color: color),
-                  onPressed: () => _showRiwayatDialog(riwayat, jenis),
-                  tooltip: 'Lihat Semua Riwayat $jenis',
-                ),
-              ],
+            Text(
+              '$jenis Terakhir',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             const Divider(),
             Text('Tanggal: ${DateFormat('dd MMM yyyy').format(tanggal)}'),
@@ -547,7 +470,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
               const Center(
                 child: Padding(
                   padding: EdgeInsets.all(8.0),
-                  child: Text('Tidak ada data.'),
+                  child: Text('Tidak ada data riwayat.'),
                 ),
               )
             else
@@ -565,59 +488,8 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     );
   }
 
-  void _showRiwayatDialog(List<dynamic> riwayat, String jenis) {
-    final List<PemeriksaanItem> items =
-        riwayat.map((e) {
-          if (jenis == 'Kunjungan') {
-            return PemeriksaanItem(
-              data: e,
-              jenis: jenis,
-              tanggal: e.tanggalKunjungan,
-            );
-          }
-          return PemeriksaanItem(
-            data: e,
-            jenis: jenis,
-            tanggal: e.tanggalImunisasi,
-          );
-        }).toList();
-
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Semua Riwayat $jenis'),
-            content: SizedBox(
-              width: double.maxFinite,
-              child:
-                  items.isEmpty
-                      ? const Center(child: Text('Tidak ada riwayat.'))
-                      : ListView.builder(
-                        itemCount: items.length,
-                        itemBuilder:
-                            (context, index) => _buildPemeriksaanListTile(
-                              items[index],
-                              isInDialog: true,
-                            ),
-                      ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Tutup'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  Widget _buildPemeriksaanListTile(
-    PemeriksaanItem item, {
-    bool isInDialog = false,
-  }) {
+  Widget _buildPemeriksaanListTile(PemeriksaanItem item) {
     final bool isKematian = item.jenis == 'Kematian';
-    final bool isKunjungan = item.jenis == 'Kunjungan';
-
     final IconData iconData;
     final Color color;
     String subtitle;
@@ -628,9 +500,9 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
       final kematian = item.data as Kematian;
       iconData = Icons.report_off_outlined;
       color = Colors.red.shade800;
-      title = 'Meninggal Dunia';
+      title = 'Data Kematian Dicatat';
       subtitle = 'Penyebab: ${kematian.penyebab ?? 'Tidak diketahui'}';
-    } else if (isKunjungan) {
+    } else if (item.jenis == 'Kunjungan') {
       final k = item.data as KunjunganModel;
       iconData = Icons.medical_services_outlined;
       color = Colors.blue;
@@ -642,7 +514,6 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
       color = Colors.green;
       subtitle = 'Jenis: ${i.jenisImunisasi}';
     }
-
     return ListTile(
       leading: Icon(iconData, color: color),
       title: Text(
@@ -653,23 +524,6 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
                 : null,
       ),
       subtitle: Text(subtitle),
-      dense: !isInDialog,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
-            tooltip: 'Edit Data ${item.jenis}',
-            onPressed: () => _handlePemeriksaanAction(item: item, isEdit: true),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-            tooltip: 'Hapus Data ${item.jenis}',
-            onPressed:
-                () => _handlePemeriksaanAction(item: item, isEdit: false),
-          ),
-        ],
-      ),
     );
   }
 }

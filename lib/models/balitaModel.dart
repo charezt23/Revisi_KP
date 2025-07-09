@@ -7,10 +7,11 @@ class BalitaModel {
   DateTime tanggalLahir;
   String alamat;
   String jenisKelamin;
-  String namaIbu = ''; // Default value for namaIbu
+  String namaIbu;
   int posyanduId;
   String bukuKIA;
-  PosyanduModel? posyandu; // Added PosyanduModel
+  PosyanduModel? posyandu;
+  final DateTime? tanggalKematian; // <-- TAMBAHKAN BARIS INI
 
   BalitaModel({
     this.id,
@@ -19,27 +20,38 @@ class BalitaModel {
     required this.tanggalLahir,
     required this.alamat,
     required this.jenisKelamin,
+    required this.namaIbu,
     required this.posyanduId,
     required this.bukuKIA,
     this.posyandu,
+    this.tanggalKematian, // <-- TAMBAHKAN INI DI CONSTRUCTOR
   });
 
-  BalitaModel.fromJson(Map<String, dynamic> json)
-    : id = json['id'],
-      nama = json['nama'],
-      nik = json['nik'],
-      namaIbu = json['nama_ibu'] ?? '',
-      tanggalLahir = DateTime.parse(json['tanggal_lahir']),
-      alamat = json['alamat'],
-      jenisKelamin = json['jenis_kelamin'],
-      posyanduId = json['posyandu_id'],
-      bukuKIA = json['Buku_KIA'],
-      posyandu =
+  factory BalitaModel.fromJson(Map<String, dynamic> json) {
+    return BalitaModel(
+      id: json['id'],
+      nama: json['nama'],
+      nik: json['nik'],
+      namaIbu: json['nama_ibu'] ?? '',
+      tanggalLahir: DateTime.parse(json['tanggal_lahir']),
+      alamat: json['alamat'],
+      jenisKelamin: json['jenis_kelamin'],
+      posyanduId: json['posyandu_id'],
+      bukuKIA: json['Buku_KIA'],
+      posyandu:
           json['posyandu'] != null
               ? PosyanduModel.fromJson(json['posyandu'])
-              : null;
+              : null,
+      // <-- TAMBAHKAN LOGIKA INI UNTUK MEMBACA DARI JSON -->
+      tanggalKematian:
+          json['tanggal_kematian'] != null
+              ? DateTime.parse(json['tanggal_kematian'])
+              : null,
+    );
+  }
 
   Map<String, dynamic> toJson() {
+    // ... (Fungsi toJson Anda)
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['nama'] = nama;
@@ -50,11 +62,6 @@ class BalitaModel {
     data['jenis_kelamin'] = jenisKelamin;
     data['posyandu_id'] = posyanduId;
     data['Buku_KIA'] = bukuKIA;
-    if (posyandu != null) {
-      data['posyandu'] = posyandu!.toJson();
-    }
     return data;
   }
 }
-
-List<BalitaModel> BalitaList = [];

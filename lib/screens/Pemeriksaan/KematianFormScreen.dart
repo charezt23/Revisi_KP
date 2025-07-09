@@ -93,7 +93,7 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
       Map<String, dynamic> data = {
         'balita_id': widget.balita.id,
         'tanggal_kematian': formattedDateForApi,
-        'penyebab_kematian': _penyebabController.text,
+        'penyebab_kematian': _penyebabController.text, // <-- sesuai backend
       };
 
       String successMessage;

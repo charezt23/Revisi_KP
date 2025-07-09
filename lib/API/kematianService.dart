@@ -70,6 +70,9 @@ class KematianService {
 
       if (response.statusCode == 200) {
         final decodedResponse = json.decode(response.body);
+        print(
+          'DEBUG getKematian response: ' + response.body.toString(),
+        ); // Tambahkan log ini
         // Pastikan response memiliki data sebelum di-parse
         if (decodedResponse['data'] != null) {
           return Kematian.fromJson(decodedResponse['data']);
@@ -110,6 +113,30 @@ class KematianService {
       print('Data kematian berhasil diperbarui.');
     } catch (e) {
       throw Exception('Terjadi kesalahan saat memperbarui data kematian: $e');
+    }
+  }
+
+  /// Mengambil semua data kematian (untuk patch frontend filter balita aktif)
+  Future<List<Kematian>> getAllKematian() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$base_url/kematian'),
+        headers: {'Accept': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        if (decoded['data'] != null && decoded['data'] is List) {
+          return (decoded['data'] as List)
+              .map((item) => Kematian.fromJson(item))
+              .toList();
+        } else {
+          return [];
+        }
+      } else {
+        throw Exception('Gagal memuat data kematian: Status ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Gagal terhubung ke server: $e');
     }
   }
 }

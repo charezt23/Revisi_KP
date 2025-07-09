@@ -66,7 +66,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     super.initState();
     _currentBalita = widget.balita;
     Intl.defaultLocale = 'id_ID';
-    _detailData = _fetchData();
+    _refreshData();
   }
 
   // --- LOGIKA DATA ---
@@ -131,7 +131,8 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     return semuaRiwayat;
   }
 
-  // --- LOGIKA AKSI (EDIT, DELETE, TAMBAH) ---
+  // --- LOGIKA AKSI ---
+
   Future<void> _lakukanPemeriksaan() async {
     final jenis = await showDialog<JenisPemeriksaan>(
       context: context,
@@ -177,7 +178,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
       context,
       MaterialPageRoute(builder: (_) => nextPage),
     );
-    if (result == true) _refreshData();
+    if (result == true && mounted) await _refreshData();
   }
 
   Future<void> _deleteBalita() async {
@@ -218,6 +219,72 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
             backgroundColor: Colors.red,
           ),
         );
+      }
+    }
+  }
+
+  // <-- FUNGSI BARU UNTUK MENGELOLA DATA KEMATIAN -->
+  Future<void> _handleKematianAction(
+    Kematian kematian, {
+    required bool isEdit,
+  }) async {
+    if (isEdit) {
+      // Navigasi ke form edit kematian
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => KematianFormScreen(
+                balita: _currentBalita,
+                kematianToEdit: kematian,
+              ),
+        ),
+      );
+      if (result == true && mounted) await _refreshData();
+    } else {
+      // Proses hapus data kematian
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Hapus Data Kematian'),
+              content: const Text(
+                'Anda yakin ingin menghapus data kematian ini? Status balita akan kembali menjadi hidup.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Batal'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text(
+                    'Hapus',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+      );
+      if (confirm == true && mounted) {
+        try {
+          await _kematianService.deleteKematian(kematian.id);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Data kematian berhasil dihapus.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          await _refreshData();
+          Navigator.of(context).pop(true);
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal menghapus: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -291,11 +358,8 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
         ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
-            // Kirim objek Kematian langsung ke widget info dasar
             _buildInfoDasar(dataKematian: data.dataKematian),
             const SizedBox(height: 16),
-
-            // Hanya tampilkan ringkasan jika balita masih hidup
             if (data.dataKematian == null) ...[
               _buildRingkasanPemeriksaanTerakhir(
                 jenis: 'Kunjungan',
@@ -319,7 +383,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
 
   // --- WIDGET HELPER ---
 
-  // <-- PERUBAHAN UTAMA DI SINI -->
+  // <-- WIDGET UTAMA DENGAN LOGIKA BARU -->
   Widget _buildInfoDasar({required Kematian? dataKematian}) {
     final balita = _currentBalita;
     final bool isDeceased = dataKematian != null;
@@ -368,13 +432,18 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
                             setState(() {
                               _currentBalita = result;
                             });
-                            _refreshData();
+                            await _refreshData();
+                          } else if (result == true && mounted) {
+                            await _refreshData();
                           }
                         },
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: _deleteBalita,
+                        onPressed: () async {
+                          await _deleteBalita();
+                          // _deleteBalita sudah handle pop dan refresh
+                        },
                         tooltip: 'Hapus Balita',
                       ),
                     ],
@@ -383,21 +452,58 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
             ),
             const Divider(),
 
-            // Tampilkan detail kematian secara eksplisit di atas jika ada
-            if (isDeceased) ...[
-              Text(
-                'Telah Meninggal Dunia',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red.shade700,
-                  fontSize: 16,
-                ),
+            if (isDeceased && dataKematian != null) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Telah Meninggal Dunia',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red.shade700,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.edit,
+                          color: Colors.blue,
+                          size: 20,
+                        ),
+                        tooltip: 'Edit Data Kematian',
+                        onPressed:
+                            () => _handleKematianAction(
+                              dataKematian,
+                              isEdit: true,
+                            ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                        tooltip: 'Hapus Data Kematian',
+                        onPressed:
+                            () => _handleKematianAction(
+                              dataKematian,
+                              isEdit: false,
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               Text(
-                'Tanggal: ${DateFormat('dd MMMM yyyy').format(dataKematian!.tanggalKematian)}',
+                'Tanggal: ${DateFormat('dd MMMM yyyy').format(dataKematian.tanggalKematian)}',
               ),
-              Text('Penyebab: ${dataKematian.penyebab ?? "Tidak dicatat"}'),
+              Text(
+                'Penyebab: ${dataKematian.penyebab?.isNotEmpty == true ? dataKematian.penyebab : "Tidak dicatat"}',
+              ),
               const Divider(),
             ],
 
@@ -488,42 +594,40 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     );
   }
 
+  // <-- WIDGET UNTUK MENAMPILKAN TIAP ITEM RIWAYAT -->
   Widget _buildPemeriksaanListTile(PemeriksaanItem item) {
-    final bool isKematian = item.jenis == 'Kematian';
-    final IconData iconData;
-    final Color color;
-    String subtitle;
-    String title =
-        '${item.jenis} - ${DateFormat('dd MMMM yyyy').format(item.tanggal)}';
+    final isKematian = item.jenis == 'Kematian';
+    final tanggalFormatted = DateFormat('dd MMM yyyy').format(item.tanggal);
+    final icon =
+        isKematian
+            ? Icons.person_off_outlined
+            : (item.jenis == 'Kunjungan'
+                ? Icons.medical_services
+                : Icons.vaccines);
+    final color =
+        isKematian
+            ? Colors.red.shade700
+            : (item.jenis == 'Kunjungan' ? Colors.blue : Colors.green);
 
-    if (isKematian) {
-      final kematian = item.data as Kematian;
-      iconData = Icons.report_off_outlined;
-      color = Colors.red.shade800;
-      title = 'Data Kematian Dicatat';
-      subtitle = 'Penyebab: ${kematian.penyebab ?? 'Tidak diketahui'}';
-    } else if (item.jenis == 'Kunjungan') {
-      final k = item.data as KunjunganModel;
-      iconData = Icons.medical_services_outlined;
-      color = Colors.blue;
-      subtitle = 'BB: ${k.beratBadan} kg, TB: ${k.tinggiBadan} cm';
-    } else {
-      // Imunisasi
-      final i = item.data as Imunisasi;
-      iconData = Icons.vaccines;
-      color = Colors.green;
-      subtitle = 'Jenis: ${i.jenisImunisasi}';
-    }
     return ListTile(
-      leading: Icon(iconData, color: color),
+      leading: Icon(icon, color: color),
       title: Text(
-        title,
-        style:
-            isKematian
-                ? TextStyle(fontWeight: FontWeight.bold, color: color)
-                : null,
+        '${item.jenis} pada ${tanggalFormatted}',
+        style: TextStyle(color: color),
       ),
-      subtitle: Text(subtitle),
+      subtitle:
+          isKematian
+              ? Text(
+                'Penyebab: ${(item.data as Kematian).penyebab?.isNotEmpty == true ? (item.data as Kematian).penyebab : "Tidak dicatat"}',
+              )
+              : Text(
+                item.jenis == 'Kunjungan'
+                    ? 'BB: ${(item.data as KunjunganModel).beratBadan} kg, TB: ${(item.data as KunjunganModel).tinggiBadan} cm'
+                    : 'Jenis Imunisasi: ${(item.data as Imunisasi).jenisImunisasi}',
+              ),
+      onTap: () {
+        // Aksi ketika item ditekan, bisa navigasi ke detail atau edit
+      },
     );
   }
 }

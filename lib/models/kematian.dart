@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'package:flutter_application_1/API/BaseURL.dart';
+import 'package:http/http.dart' as http;
+
 // Fungsi untuk encode objek tunggal ke JSON
 String kematianToJson(Kematian data) => json.encode(data.toJson());
 
@@ -20,7 +23,7 @@ class Kematian {
     id: json["id"],
     balitaId: int.parse(json["balita_id"].toString()), // Konversi aman
     tanggalKematian: DateTime.parse(json["tanggal_kematian"]),
-    penyebab: json["penyebab"],
+    penyebab: json["penyebab_kematian"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -31,4 +34,17 @@ class Kematian {
         "${tanggalKematian.year.toString().padLeft(4, '0')}-${tanggalKematian.month.toString().padLeft(2, '0')}-${tanggalKematian.day.toString().padLeft(2, '0')}",
     "penyebab": penyebab,
   };
+}
+
+Future<List<Kematian>> getAllKematian() async {
+  final response = await http.get(
+    Uri.parse('$base_url/kematian'),
+    headers: {'Accept': 'application/json'},
+  );
+  if (response.statusCode == 200) {
+    final decoded = json.decode(response.body);
+    final List data = decoded['data'];
+    return data.map((e) => Kematian.fromJson(e)).toList();
+  }
+  return [];
 }

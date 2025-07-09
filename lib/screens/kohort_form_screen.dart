@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/API/PosyanduService.dart';
-import 'package:flutter_application_1/screens/manajer_posyandu.dart';
+import 'package:flutter_application_1/widgets/login_background.dart';
 
 class KohortFormScreen extends StatefulWidget {
   // Meskipun bernama KohortFormScreen, form ini akan membuat data Posyandu
@@ -33,13 +33,9 @@ class _KohortFormScreenState extends State<KohortFormScreen> {
       });
 
       try {
-        // TODO: Ganti '1' dengan ID user yang sedang login dari SharedPreferences.
-        // Panggil API untuk membuat Posyandu.
-        // Kita akan mengasumsikan proses ini sukses jika tidak ada error yang terjadi.
         await _posyanduService.CreatePosyandu(
           _namaPosyanduController.text,
           _namaDesaController.text,
-          // Untuk sementara, ID pengguna di-hardcode
         );
 
         // Jika kode berhasil mencapai baris ini, berarti tidak ada error.
@@ -54,9 +50,12 @@ class _KohortFormScreenState extends State<KohortFormScreen> {
         // Kembali ke halaman sebelumnya (HomeScreen)
         Navigator.pop(context);
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Terjadi kesalahan: $e'),
+            content: Text(
+              'Gagal menyimpan: ${e.toString().replaceAll("Exception: ", "")}',
+            ),
             backgroundColor: Colors.red,
           ),
         );

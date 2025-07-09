@@ -4,36 +4,9 @@ import 'package:flutter_application_1/screens/kohort_form_screen.dart';
 import 'package:flutter_application_1/screens/kohort_detail_screen.dart';
 import 'package:flutter_application_1/screens/login_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_application_1/widgets/login_background.dart';
 import '../API/PosyanduService.dart';
 import '../models/posyanduModel.dart';
-
-// ===================================================================
-// Widget untuk Background.
-// ===================================================================
-class LoginBackground extends StatelessWidget {
-  const LoginBackground({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/images/BackgrounLogin.png'),
-          fit: BoxFit.cover,
-        ),
-      ),
-      // Memberikan lapisan warna gelap agar gambar tidak terlalu terang
-      child: Container(
-        color: const Color.fromARGB(
-          255,
-          255,
-          255,
-          255,
-        ).withOpacity(0.5), // Sesuaikan opasitas
-      ),
-    );
-  }
-}
 
 // ===================================================================
 // Widget Utama HomeScreen
@@ -47,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final Posyanduservice _posyanduService = Posyanduservice();
+  List<PosyanduModel> _posyanduList = [];
   bool _isLoading = true;
 
   @override
@@ -56,15 +30,29 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchPosyanduData() async {
-    setState(() {
-      _isLoading = true;
-    });
+    // Hanya set state jika widget masih terpasang (mounted)
+    if (mounted) setState(() => _isLoading = true);
 
-    // Mengambil data posyandu berdasarkan user yang login
-    await _posyanduService.GetPosyanduByUser();
-
-    // Memanggil setState untuk me-render ulang UI dengan data baru
-    if (mounted) {
+    try {
+      // Ambil data dan simpan ke state lokal
+      final fetchedList = await _posyanduService.GetPosyanduByUser();
+      if (mounted) {
+        setState(() {
+          // Gunakan ?? [] untuk memastikan list tidak pernah null
+          _posyanduList = fetchedList ?? [];
+        });
+      }
+    } catch (e) {
+      // Tangani error jika gagal mengambil data
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memuat data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
       setState(() {
         _isLoading = false;
       });
@@ -101,35 +89,40 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Method untuk menampilkan dialog logout
-  void _showLogoutDialog() {
-    showDialog(
+  Future<void> _showLogoutDialog() async {
+    // `showDialog` returns a Future. We can await its result.
+    final bool? shouldLogout = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Konfirmasi Logout'),
           content: const Text('Apakah Anda yakin ingin keluar?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              // Pop the dialog and return `false`
+              onPressed: () => Navigator.of(dialogContext).pop(false),
               child: const Text('Batal'),
             ),
             TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop(); // Tutup dialog
-                await AuthService.logout(); // Hapus data login
-
-                // Navigasi ke login screen dan hapus semua route sebelumnya
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              },
+              // Pop the dialog and return `true`
+              onPressed: () => Navigator.of(dialogContext).pop(true),
               child: const Text('Logout'),
             ),
           ],
         );
       },
     );
+
+    // This code will only run AFTER the dialog is closed.
+    // The `context` here is the original, valid _HomeScreenState context.
+    if (shouldLogout == true) {
+      await AuthService.logout();
+      if (!mounted) return; // Always check `mounted` after an `await`.
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
   }
 
   // Method untuk menghapus Posyandu
@@ -201,17 +194,19 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             actions: [
-              // Menu untuk melihat info user dan logout
+              // Tombol ikon untuk logout
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: _showLogoutDialog,
+                tooltip: 'Logout',
+              ),
+              // Menu untuk melihat info user
               PopupMenuButton<String>(
                 onSelected: (value) async {
                   if (value == 'profile') {
                     // Tampilkan info user
                     final user = await AuthService.getCurrentUser();
-                    if (user != null && mounted) {
-                      _showUserInfo(user);
-                    }
-                  } else if (value == 'logout') {
-                    _showLogoutDialog();
+                    if (user != null && mounted) _showUserInfo(user);
                   }
                 },
                 itemBuilder:
@@ -226,16 +221,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                      const PopupMenuItem<String>(
-                        value: 'logout',
-                        child: Row(
-                          children: [
-                            Icon(Icons.logout),
-                            SizedBox(width: 8),
-                            Text('Logout'),
-                          ],
-                        ),
-                      ),
                     ],
               ),
             ],
@@ -243,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
           body:
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : posyanduList.isEmpty
+                  : _posyanduList.isEmpty
                   ? const Center(
                     child: Text(
                       'Belum ada data Posyandu. Tekan + untuk membuat.',
@@ -258,9 +243,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   : RefreshIndicator(
                     onRefresh: _fetchPosyanduData,
                     child: ListView.builder(
-                      itemCount: posyanduList.length,
+                      itemCount: _posyanduList.length,
                       itemBuilder: (context, index) {
-                        final posyandu = posyanduList[index];
+                        final posyandu = _posyanduList[index];
                         return Card(
                           color: const Color.fromARGB(
                             255,
@@ -284,8 +269,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            subtitle: Text(
-                              'Dibuat: ${posyandu.createdAt != null ? DateFormat('dd MMM yyyy').format(posyandu.createdAt!) : 'N/A'}',
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Dibuat: ${posyandu.createdAt != null ? DateFormat('dd MMM yyyy').format(posyandu.createdAt!) : 'N/A'}',
+                                ),
+                                Text(
+                                  'Jumlah Balita: ${posyandu.balitaCount ?? 0}',
+                                ),
+                              ],
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -304,9 +297,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                            onTap: () {
+                            onTap: () async {
                               // Navigasi ke detail screen
-                              Navigator.push(
+                              final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder:
@@ -315,6 +308,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                 ),
                               );
+                              // Jika layar detail mengembalikan 'true' (artinya ada perubahan),
+                              // maka panggil _fetchPosyanduData() untuk refresh.
+                              if (result == true && mounted) {
+                                _fetchPosyanduData();
+                              }
                             },
                           ),
                         );

@@ -7,8 +7,7 @@ import 'package:flutter_application_1/API/ImunisasiService.dart';
 
 class ImunisasiFormScreen extends StatefulWidget {
   final BalitaModel balita;
-
-  final dynamic imunisasiToEdit;
+  final Imunisasi? imunisasiToEdit;
 
   const ImunisasiFormScreen({
     super.key,
@@ -29,6 +28,21 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
   final _imunisasiService = ImunisasiService();
   DateTime? _selectedDate;
   bool _isLoading = false;
+
+  // Getter untuk mengecek apakah ini mode edit atau buat baru
+  bool get _isEditing => widget.imunisasiToEdit != null;
+
+  @override
+  void initState() {
+    super.initState();
+    // Jika ini mode edit, isi form dengan data yang ada
+    if (_isEditing) {
+      final imunisasi = widget.imunisasiToEdit!;
+      _jenisImunisasiTerpilih = imunisasi.jenisImunisasi;
+      _selectedDate = imunisasi.tanggalImunisasi;
+      _tanggalController.text = DateFormat('dd-MM-yyyy').format(_selectedDate!);
+    }
+  }
 
   Future<void> _pilihTanggal() async {
     DateTime? picked = await showDatePicker(
@@ -52,42 +66,64 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
       });
 
       try {
-        // Sesuaikan payload dengan yang diharapkan oleh service (Map<String, dynamic>)
-        final data = {
-          'balita_id': widget.balita.id!,
-          'jenis_imunisasi': _jenisImunisasiTerpilih!,
-          'tanggal_imunisasi': DateFormat('yyyy-MM-dd').format(_selectedDate!),
-        };
+        bool isSuccess;
+        String successMessage;
 
-        // Panggil service dan tangkap hasilnya (boolean)
-        final bool isSuccess = await _imunisasiService.createImunisasi(data);
+        if (_isEditing) {
+          // --- LOGIKA UNTUK UPDATE ---
+          // Pastikan service Anda memiliki method untuk update
+          // dan Anda mengirim ID dari data yang akan di-edit.
+          final dataToUpdate = {
+            'jenis_imunisasi': _jenisImunisasiTerpilih!,
+            'tanggal_imunisasi': DateFormat(
+              'yyyy-MM-dd',
+            ).format(_selectedDate!),
+          };
+          final idToUpdate = widget.imunisasiToEdit!.id;
+          isSuccess = await _imunisasiService.updateImunisasi(
+            idToUpdate,
+            dataToUpdate,
+          );
+          successMessage = 'Data imunisasi berhasil diperbarui.';
+        } else {
+          // --- LOGIKA UNTUK CREATE (YANG SUDAH ADA) ---
+          final dataToCreate = {
+            'balita_id': widget.balita.id!,
+            'jenis_imunisasi': _jenisImunisasiTerpilih!,
+            'tanggal_imunisasi': DateFormat(
+              'yyyy-MM-dd',
+            ).format(_selectedDate!),
+          };
+          isSuccess = await _imunisasiService.createImunisasi(dataToCreate);
+          successMessage =
+              'Imunisasi "$_jenisImunisasiTerpilih" untuk ${widget.balita.nama} berhasil disimpan.';
+        }
 
         if (!mounted) return;
 
         if (isSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                'Imunisasi "$_jenisImunisasiTerpilih" untuk ${widget.balita.nama} berhasil disimpan.',
-              ),
+              content: Text(successMessage),
               backgroundColor: Colors.green,
             ),
           );
           // Kembali ke halaman sebelumnya dengan nilai true untuk menandakan sukses
           Navigator.of(context).pop(true);
         } else {
-          // Tampilkan error jika service mengembalikan false
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                'Gagal menyimpan data. Server merespon dengan error.',
+                'Gagal menyimpan data. Terjadi kesalahan di server.',
               ),
               backgroundColor: Colors.red,
             ),
           );
         }
       } catch (e) {
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal menyimpan: $e'),
@@ -114,7 +150,7 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Form Imunisasi'),
+        title: Text(_isEditing ? 'Edit Imunisasi' : 'Form Imunisasi'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),

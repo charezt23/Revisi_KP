@@ -33,7 +33,7 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
   final Map<String, String> _statusGiziOptions = {
     'N': 'Normal',
     'K': 'Kurang',
-    'T': 'Tinggi/Obesitas',
+    'T': 'Obesitas',
   };
 
   String? _selectedRambuGizi;

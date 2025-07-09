@@ -15,7 +15,7 @@ class LoginBackground extends StatelessWidget {
             image: AssetImage(
               'assets/images/BackgrounLogin.png',
             ), // Updated Path
-            fit: BoxFit.cover,
+            fit: BoxFit.scaleDown,
             // Use BoxFit.cover to fill the entire container
           ),
         ),

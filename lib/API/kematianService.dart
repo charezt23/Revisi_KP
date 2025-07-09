@@ -34,24 +34,27 @@ class KematianService {
 
   /// Menghapus data kematian berdasarkan ID balita.
   /// Melemparkan Exception jika gagal.
-  Future<void> deleteKematian(int balitaId) async {
+  // di file: kematianService.dart
+
+  Future<bool> deleteKematian(int id) async {
+    // 1. Ubah dari Future<void> menjadi Future<bool>
     try {
       final response = await http.delete(
-        Uri.parse(
-          '$base_url/kematian/balita/$balitaId',
-        ), // Endpoint disesuaikan
+        Uri.parse('$base_url/kematian/$id'),
         headers: {'Accept': 'application/json'},
       );
 
-      // Status 200 (OK) atau 204 (No Content) adalah tanda sukses.
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception(
-          'Gagal menghapus data kematian. Status: ${response.statusCode}, Body: ${response.body}',
-        );
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('Data kematian berhasil dihapus.');
+        return true; // 2. Kembalikan 'true' jika berhasil
+      } else {
+        // Jika gagal, jangan lemparkan error, tapi kembalikan 'false'
+        print('Gagal menghapus data kematian. Status: ${response.statusCode}');
+        return false; // 3. Kembalikan 'false' jika gagal
       }
-      print('Data kematian berhasil dihapus.');
     } catch (e) {
-      throw Exception('Terjadi kesalahan saat menghapus data kematian: $e');
+      print('Terjadi kesalahan saat menghapus data kematian: $e');
+      return false; // 4. Kembalikan 'false' jika ada error koneksi dll.
     }
   }
 

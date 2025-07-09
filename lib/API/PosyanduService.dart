@@ -5,53 +5,65 @@ import 'package:flutter_application_1/models/posyanduModel.dart';
 import 'package:http/http.dart' as http;
 
 class Posyanduservice {
-  CreatePosyandu(String namaPosyandu, String namaDesa) async {
+  Future<void> CreatePosyandu(String namaPosyandu, String namaDesa) async {
     try {
       final userId = await AuthService.getUserId();
-      var request = http.Request('POST', Uri.parse(base_url + '/posyandu'));
-      request.body = json.encode({
-        'nama_posyandu': namaPosyandu,
-        'nama_desa': namaDesa,
-        'user_id': userId,
-      });
-      request.headers.addAll({'Content-Type': 'application/json'});
-      http.StreamedResponse response = await request.send();
-      if (response.statusCode == 200) {
-        print('Response status: ${response.statusCode}');
-        return true;
-      } else {
-        print('Error: ${response.reasonPhrase}');
-        return false;
+      if (userId == null) {
+        throw Exception('Sesi pengguna tidak valid. Silakan login ulang.');
+      }
+
+      final response = await http.post(
+        Uri.parse('$base_url/posyandu'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'nama_posyandu': namaPosyandu,
+          'nama_desa': namaDesa,
+          'user_id': userId,
+        }),
+      );
+
+      if (response.statusCode != 201 && response.statusCode != 200) {
+        // Lemparkan exception dengan pesan error dari server jika ada
+        throw Exception(
+          'Gagal membuat Posyandu. Status: ${response.statusCode}, Pesan: ${response.body}',
+        );
       }
     } catch (e) {
       print(e);
+      // Lemparkan kembali error agar bisa ditangkap oleh UI
+      rethrow;
     }
   }
 
-  GetPosyanduByUser() async {
+  Future<List<PosyanduModel>> GetPosyanduByUser() async {
     try {
       final userId = await AuthService.getUserId();
-      var request = http.Request(
-        'GET',
+      if (userId == null) {
+        throw Exception('User tidak ditemukan, silakan login ulang.');
+      }
+      final response = await http.get(
         Uri.parse(base_url + '/posyandu/user/${userId}'),
       );
-      http.StreamedResponse response = await request.send();
+
       if (response.statusCode == 200) {
         print('Response status: ${response.statusCode}');
-        var responseData = await response.stream.bytesToString();
-        Map<String, dynamic> responDecode = json.decode(responseData);
-        List<dynamic> data = responDecode['data'];
+        final Map<String, dynamic> responDecode = json.decode(response.body);
+        final List<dynamic> data = responDecode['data'];
         print("Data: $data");
-        posyanduList.clear();
-        for (var item in data) {
-          posyanduList.add(PosyanduModel.fromJson(item));
-        }
+
+        // Konversi list json menjadi list PosyanduModel dan kembalikan
+        return data.map((item) => PosyanduModel.fromJson(item)).toList();
       } else {
         print('Error: ${response.reasonPhrase}');
-        return null;
+        // Lemparkan exception agar bisa ditangani oleh UI
+        throw Exception(
+          'Gagal mengambil data Posyandu: ${response.reasonPhrase}',
+        );
       }
     } catch (e) {
       print(e);
+      // Lemparkan kembali exception agar UI tahu ada error
+      rethrow;
     }
   }
 

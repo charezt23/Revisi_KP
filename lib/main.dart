@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/manajer_posyandu.dart';
+import 'package:flutter_application_1/screens/Home_Screen.dart';
 import 'package:flutter_application_1/screens/login_screen.dart';
 import 'package:flutter_application_1/API/authservice.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -50,12 +50,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // Jika sudah login, tampilkan HomeScreen
-        // Jika belum login, tampilkan LoginScreen
-        if (snapshot.data == true) {
-          return const HomeScreen();
-        } else {
+        if (snapshot.data == false || snapshot.data == null) {
           return const LoginScreen();
+        } else {
+          return const HomeScreen();
         }
       },
     );

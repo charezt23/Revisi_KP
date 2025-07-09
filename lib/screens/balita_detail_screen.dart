@@ -66,23 +66,25 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
   void initState() {
     super.initState();
     _currentBalita = widget.balita;
+    // Mengatur locale untuk format tanggal Indonesia
+    Intl.defaultLocale = 'id_ID';
     _refreshData();
   }
 
   // --- LOGIKA DATA ---
+
+  /// Fungsi utama untuk refresh data, sama seperti menekan ikon refresh.
   Future<void> _refreshData() async {
-    // Pemicu FutureBuilder untuk memuat ulang dengan data baru
     if (mounted) {
       setState(() {
         _detailData = _fetchData();
       });
     }
-    // Tunggu hingga proses fetch selesai untuk RefreshIndicator
     await _detailData;
   }
 
+  /// Mengambil semua data dari API secara bersamaan.
   Future<BalitaDetailData> _fetchData() async {
-    // Ambil semua data yang diperlukan secara bersamaan untuk efisiensi
     final results = await Future.wait([
       _balitaService.GetBalitaData(_currentBalita.id!),
       _kunjunganService.GetKunjunganbalitaByBalita(_currentBalita.id!),
@@ -95,7 +97,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     final riwayatImunisasi = results[2] as List<Imunisasi>;
     final dataKematian = results[3] as Kematian?;
 
-    // Perbarui state balita saat ini jika datanya berubah
+    // Perbarui state balita jika ada perubahan nama/NIK
     if (mounted &&
         (balitaTerbaru.nama != _currentBalita.nama ||
             balitaTerbaru.nik != _currentBalita.nik)) {
@@ -104,7 +106,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
       });
     }
 
-    // Kembalikan data riwayat yang sudah diurutkan
+    // Kembalikan semua data yang sudah diurutkan
     return BalitaDetailData(
       riwayatKunjungan:
           riwayatKunjungan
@@ -118,6 +120,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
 
   // --- LOGIKA AKSI (EDIT, DELETE, TAMBAH) ---
 
+  /// Menampilkan dialog untuk memilih jenis pemeriksaan baru.
   Future<void> _lakukanPemeriksaan() async {
     final jenis = await showDialog<JenisPemeriksaan>(
       context: context,
@@ -161,15 +164,18 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
       JenisPemeriksaan.kematian => KematianFormScreen(balita: _currentBalita),
     };
 
+    // Buka form dan tunggu hasilnya.
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => nextPage),
     );
+    // Jika form ditutup dengan sinyal 'true', maka refresh data.
     if (result == true) {
       _refreshData();
     }
   }
 
+  /// Menghapus data balita secara keseluruhan.
   Future<void> _deleteBalita() async {
     final bool? confirm = await _showConfirmationDialog(
       'Hapus Balita',
@@ -196,13 +202,12 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     }
   }
 
+  /// Menangani aksi edit atau hapus pada setiap item riwayat.
   Future<void> _handlePemeriksaanAction({
     required PemeriksaanItem item,
     required bool isEdit,
   }) async {
-    if (item.jenis == 'Kematian')
-      return; // Data kematian tidak bisa diedit/dihapus dari sini
-
+    // --- LOGIKA UNTUK EDIT ---
     if (isEdit) {
       Widget? nextPage;
       if (item.jenis == 'Kunjungan') {
@@ -215,6 +220,11 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
           balita: _currentBalita,
           imunisasiToEdit: item.data as Imunisasi,
         );
+      } else if (item.jenis == 'Kematian') {
+        nextPage = KematianFormScreen(
+          balita: _currentBalita,
+          kematianToEdit: item.data as Kematian,
+        );
       }
 
       if (nextPage != null && mounted) {
@@ -222,11 +232,14 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
           context,
           MaterialPageRoute(builder: (_) => nextPage!),
         );
+        // Jika form edit ditutup dengan sinyal 'true', maka refresh data.
         if (result == true) {
           _refreshData();
         }
       }
-    } else {
+    }
+    // --- LOGIKA UNTUK HAPUS ---
+    else {
       final bool? confirm = await _showConfirmationDialog(
         'Hapus Riwayat',
         'Anda yakin ingin menghapus riwayat ${item.jenis} ini?',
@@ -238,6 +251,8 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
             success = await _kunjunganService.deleteKunjungan(item.data.id!);
           } else if (item.jenis == 'Imunisasi') {
             success = await _imunisasiService.deleteImunisasi(item.data.id!);
+          } else if (item.jenis == 'Kematian') {
+            success = await _kematianService.deleteKematian(item.data.id!);
           }
 
           if (success) {
@@ -247,6 +262,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
                 backgroundColor: Colors.green,
               ),
             );
+            // Langsung refresh data setelah berhasil hapus.
             _refreshData();
           } else {
             throw Exception('Gagal menghapus dari service.');
@@ -263,6 +279,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     }
   }
 
+  /// Menampilkan dialog konfirmasi sebelum menghapus.
   Future<bool?> _showConfirmationDialog(String title, String content) {
     return showDialog<bool>(
       context: context,
@@ -299,7 +316,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
           body = const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
           body = Center(child: Text('Gagal memuat data: ${snapshot.error}'));
-        } else if (!snapshot.hasData) {
+        } else if (!snapshot.hasData || snapshot.data == null) {
           body = const Center(child: Text('Data tidak ditemukan.'));
         } else {
           final detailData = snapshot.data!;
@@ -326,6 +343,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh),
+                tooltip: 'Refresh Data',
                 onPressed: _refreshData,
               ),
             ],
@@ -339,6 +357,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
 
   Widget _buildContent(BalitaDetailData data) {
     final isDeceased = data.dataKematian != null;
+    // Menggabungkan semua riwayat menjadi satu list untuk ditampilkan berurutan
     final semuaRiwayat = [
       if (isDeceased)
         PemeriksaanItem(
@@ -433,11 +452,9 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
                                   ),
                             ),
                           );
-
-                          if (result is BalitaModel && mounted) {
-                            setState(() {
-                              _currentBalita = result;
-                            });
+                          // Pola konsisten: panggil refresh jika form sukses
+                          if (result == true && mounted) {
+                            _refreshData();
                           }
                         },
                       ),
@@ -551,18 +568,20 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
   void _showRiwayatDialog(List<dynamic> riwayat, String jenis) {
     final List<PemeriksaanItem> items =
         riwayat.map((e) {
-          if (jenis == 'Kunjungan')
+          if (jenis == 'Kunjungan') {
             return PemeriksaanItem(
               data: e,
               jenis: jenis,
               tanggal: e.tanggalKunjungan,
             );
+          }
           return PemeriksaanItem(
             data: e,
             jenis: jenis,
             tanggal: e.tanggalImunisasi,
           );
         }).toList();
+
     showDialog(
       context: context,
       builder:
@@ -596,39 +615,42 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     PemeriksaanItem item, {
     bool isInDialog = false,
   }) {
-    if (item.jenis == 'Kematian') {
-      final kematian = item.data as Kematian;
-      return ListTile(
-        leading: const Icon(Icons.close, color: Colors.black87),
-        title: Text(
-          'Meninggal Dunia',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          'Tanggal: ${DateFormat('dd MMMM yyyy').format(item.tanggal)}\nPenyebab: ${kematian.penyebab ?? 'Tidak diketahui'}',
-        ),
-        isThreeLine: true,
-        tileColor: Colors.grey.shade200,
-        dense: !isInDialog,
-      );
-    }
+    final bool isKematian = item.jenis == 'Kematian';
+    final bool isKunjungan = item.jenis == 'Kunjungan';
 
-    final isKunjungan = item.jenis == 'Kunjungan';
-    final iconData =
-        isKunjungan ? Icons.medical_services_outlined : Icons.vaccines;
-    final color = isKunjungan ? Colors.blue : Colors.green;
+    final IconData iconData;
+    final Color color;
     String subtitle;
-    if (isKunjungan) {
+    String title =
+        '${item.jenis} - ${DateFormat('dd MMMM yyyy').format(item.tanggal)}';
+
+    if (isKematian) {
+      final kematian = item.data as Kematian;
+      iconData = Icons.report_off_outlined;
+      color = Colors.red.shade800;
+      title = 'Meninggal Dunia';
+      subtitle = 'Penyebab: ${kematian.penyebab ?? 'Tidak diketahui'}';
+    } else if (isKunjungan) {
       final k = item.data as KunjunganModel;
+      iconData = Icons.medical_services_outlined;
+      color = Colors.blue;
       subtitle = 'BB: ${k.beratBadan} kg, TB: ${k.tinggiBadan} cm';
     } else {
+      // Imunisasi
       final i = item.data as Imunisasi;
+      iconData = Icons.vaccines;
+      color = Colors.green;
       subtitle = 'Jenis: ${i.jenisImunisasi}';
     }
+
     return ListTile(
       leading: Icon(iconData, color: color),
       title: Text(
-        '${item.jenis} - ${DateFormat('dd MMMM yyyy').format(item.tanggal)}',
+        title,
+        style:
+            isKematian
+                ? TextStyle(fontWeight: FontWeight.bold, color: color)
+                : null,
       ),
       subtitle: Text(subtitle),
       dense: !isInDialog,
@@ -636,11 +658,13 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: const Icon(Icons.edit, size: 20),
+            icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
+            tooltip: 'Edit Data ${item.jenis}',
             onPressed: () => _handlePemeriksaanAction(item: item, isEdit: true),
           ),
           IconButton(
-            icon: const Icon(Icons.delete, size: 20),
+            icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+            tooltip: 'Hapus Data ${item.jenis}',
             onPressed:
                 () => _handlePemeriksaanAction(item: item, isEdit: false),
           ),

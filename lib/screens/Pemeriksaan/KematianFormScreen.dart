@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/balitaModel.dart';
+import 'package:flutter_application_1/models/kematian.dart'; // Impor model Kematian
 import 'package:flutter_application_1/API/kematianService.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
 import 'package:intl/intl.dart';
 
 class KematianFormScreen extends StatefulWidget {
   final BalitaModel balita;
+  final Kematian? kematianToEdit; // Tambahkan ini untuk menerima data edit
 
-  const KematianFormScreen({super.key, required this.balita});
+  const KematianFormScreen({
+    super.key,
+    required this.balita,
+    this.kematianToEdit, // Jadikan opsional di constructor
+  });
 
   @override
   State<KematianFormScreen> createState() => _KematianFormScreenState();
@@ -18,8 +24,28 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
   final _tanggalController = TextEditingController();
   final _penyebabController = TextEditingController();
   final KematianService _kematianService = KematianService();
+
   bool _isSaving = false;
+  bool _isEditMode = false; // Flag untuk menandai mode edit
   DateTime? _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cek apakah widget menerima data untuk diedit
+    if (widget.kematianToEdit != null) {
+      _isEditMode = true;
+      final data = widget.kematianToEdit!;
+
+      // Isi form dengan data yang ada
+      _selectedDate = data.tanggalKematian;
+      _tanggalController.text = DateFormat(
+        'dd MMMM yyyy',
+        'id_ID',
+      ).format(data.tanggalKematian);
+      _penyebabController.text = data.penyebab ?? '';
+    }
+  }
 
   @override
   void dispose() {
@@ -38,7 +64,6 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
-        // Format tanggal yang akan ditampilkan di UI
         _tanggalController.text = DateFormat(
           'dd MMMM yyyy',
           'id_ID',
@@ -57,12 +82,10 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
     });
 
     try {
-      // Pastikan tanggal sudah dipilih
       if (_selectedDate == null) {
         throw Exception("Tanggal kematian harus dipilih");
       }
 
-      // Format tanggal ke yyyy-MM-dd untuk dikirim ke API
       final String formattedDateForApi = DateFormat(
         'yyyy-MM-dd',
       ).format(_selectedDate!);
@@ -70,27 +93,32 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
       Map<String, dynamic> data = {
         'balita_id': widget.balita.id,
         'tanggal_kematian': formattedDateForApi,
-        'penyebab': _penyebabController.text, // Kunci disesuaikan
+        'penyebab_kematian': _penyebabController.text,
       };
 
-      // Panggil service. Jika ada error, akan dilempar ke blok catch.
-      await _kematianService.createKematian(data);
+      String successMessage;
 
-      // Jika kode mencapai baris ini, berarti sukses.
+      // Logika untuk membedakan antara create dan update
+      if (_isEditMode) {
+        await _kematianService.updateKematian(widget.kematianToEdit!.id!, data);
+        successMessage =
+            'Data kematian untuk ${widget.balita.nama} berhasil diperbarui.';
+      } else {
+        await _kematianService.createKematian(data);
+        successMessage =
+            'Data kematian untuk ${widget.balita.nama} berhasil dicatat.';
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Data kematian untuk ${widget.balita.nama} berhasil dicatat.',
-            ),
+            content: Text(successMessage),
             backgroundColor: Colors.green,
           ),
         );
-        // Kirim sinyal 'true' kembali ke halaman detail untuk refresh
-        Navigator.of(context).pop(true);
+        Navigator.of(context).pop(true); // Kirim sinyal refresh
       }
     } catch (e) {
-      // Menangani error dari 'throw Exception'
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -112,7 +140,7 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Form Kematian'),
+        title: Text(_isEditMode ? 'Edit Data Kematian' : 'Form Kematian'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -134,7 +162,9 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Pencatatan Kematian',
+                          _isEditMode
+                              ? 'Perbarui Data Kematian'
+                              : 'Pencatatan Kematian',
                           style: Theme.of(context).textTheme.headlineSmall,
                           textAlign: TextAlign.center,
                         ),
@@ -183,7 +213,6 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
                           onPressed: _isSaving ? null : _simpanPencatatan,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.red.shade700,
                           ),
                           child:
                               _isSaving
@@ -195,7 +224,11 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
                                       strokeWidth: 3,
                                     ),
                                   )
-                                  : const Text('Simpan Data Kematian'),
+                                  : Text(
+                                    _isEditMode
+                                        ? 'Perbarui Data'
+                                        : 'Simpan Data Kematian',
+                                  ),
                         ),
                       ],
                     ),

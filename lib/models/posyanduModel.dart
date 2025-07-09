@@ -5,6 +5,7 @@ class PosyanduModel {
   String namaDesa;
   DateTime? createdAt;
   DateTime? updatedAt;
+  int? balitaCount;
 
   PosyanduModel({
     this.id,
@@ -13,6 +14,7 @@ class PosyanduModel {
     required this.namaDesa,
     this.createdAt,
     this.updatedAt,
+    this.balitaCount,
   });
 
   PosyanduModel.fromJson(Map<String, dynamic> json)
@@ -27,7 +29,8 @@ class PosyanduModel {
       updatedAt =
           json['updated_at'] != null
               ? DateTime.parse(json['updated_at'])
-              : null;
+              : null,
+      balitaCount = json['balita_count'];
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
@@ -37,8 +40,7 @@ class PosyanduModel {
     data['nama_desa'] = namaDesa;
     data['created_at'] = createdAt?.toIso8601String();
     data['updated_at'] = updatedAt?.toIso8601String();
+    data['balita_count'] = balitaCount;
     return data;
   }
 }
-
-List<PosyanduModel> posyanduList = [];

@@ -192,11 +192,14 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
                     controller: _nikController,
                     decoration: const InputDecoration(labelText: 'NIK'),
                     keyboardType: TextInputType.number,
-                    validator:
-                        (value) =>
-                            value!.trim().isEmpty
-                                ? 'NIK tidak boleh kosong'
-                                : null,
+                    validator: (value) {
+                      final nik = value?.trim() ?? '';
+                      if (nik.isEmpty) return 'NIK tidak boleh kosong';
+                      if (nik.length != 16) return 'NIK harus 16 digit';
+                      if (!RegExp(r'^\d{16}\$').hasMatch(nik))
+                        return 'NIK hanya boleh berisi angka';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(

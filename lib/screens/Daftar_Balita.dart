@@ -3,7 +3,6 @@ import 'package:flutter_application_1/API/BalitaService.dart';
 import 'package:flutter_application_1/API/kematianService.dart';
 import 'package:flutter_application_1/models/posyanduModel.dart';
 import 'package:flutter_application_1/models/balitaModel.dart';
-import 'package:flutter_application_1/screens/Balita_Form_Screen.dart';
 import 'package:flutter_application_1/screens/balita_detail_screen.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
 import 'package:intl/intl.dart';
@@ -33,6 +32,10 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
   // Tambahan: daftar id balita yang sudah meninggal (patch frontend)
   List<int> _idBalitaMeninggal = [];
   bool _isLoadingKematian = false;
+
+  // Filter status
+  String _statusFilter =
+      'semua'; // 'semua', 'aktif', 'tidak_aktif', 'meninggal'
 
   @override
   void initState() {
@@ -114,6 +117,29 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
                     !_idBalitaMeninggal.contains(balita.id),
               )
               .toList();
+    } else {
+      // Filter status di mode riwayat
+      if (_statusFilter == 'aktif') {
+        filtered =
+            filtered
+                .where(
+                  (balita) =>
+                      _calculateAge(balita.tanggalLahir) < 6 &&
+                      !_idBalitaMeninggal.contains(balita.id),
+                )
+                .toList();
+      } else if (_statusFilter == 'tidak_aktif' ||
+          _statusFilter == 'meninggal') {
+        // Keduanya menampilkan balita yang sudah meninggal atau usia >= 6 tahun
+        filtered =
+            filtered
+                .where(
+                  (balita) =>
+                      _idBalitaMeninggal.contains(balita.id) ||
+                      _calculateAge(balita.tanggalLahir) >= 6,
+                )
+                .toList();
+      }
     }
 
     // Filter berdasarkan pencarian
@@ -254,7 +280,29 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.posyandu.namaPosyandu),
+        title: Row(
+          children: [
+            Expanded(child: Text(widget.posyandu.namaPosyandu)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color:
+                    _showHistoryMode
+                        ? Colors.orange.withOpacity(0.15)
+                        : Colors.blue.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _showHistoryMode ? 'Riwayat' : 'Aktif',
+                style: TextStyle(
+                  color: _showHistoryMode ? Colors.orange : Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -267,6 +315,7 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
             onPressed: () {
               setState(() {
                 _showHistoryMode = !_showHistoryMode;
+                _statusFilter = 'semua'; // Reset filter saat mode berubah
               });
             },
             tooltip:
@@ -280,46 +329,11 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
           const LoginBackground(),
           Column(
             children: [
-              // Status indicator
-              Container(
-                margin: const EdgeInsets.only(top: 100, left: 16, right: 16),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 16,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      _showHistoryMode
-                          ? Colors.orange.withOpacity(0.1)
-                          : Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: _showHistoryMode ? Colors.orange : Colors.blue,
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _showHistoryMode ? Icons.history : Icons.people,
-                      size: 16,
-                      color: _showHistoryMode ? Colors.orange : Colors.blue,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _showHistoryMode
-                          ? 'Menampilkan Semua Data (Riwayat)'
-                          : 'Menampilkan Data Aktif (< 6 tahun)',
-                      style: TextStyle(
-                        color: _showHistoryMode ? Colors.orange : Colors.blue,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
+              SizedBox(
+                height: kToolbarHeight + 32,
+              ), // Tambahkan jarak agar search bar tidak menabrak AppBar
+              // Status indicator (dihilangkan sesuai permintaan)
+              // const SizedBox(height: 8),
               // Search Bar
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -354,9 +368,47 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
+              ), // penutup Container search bar
+              const SizedBox(height: 8),
               // Data List
+              if (_showHistoryMode)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('Filter status: '),
+                      DropdownButton<String>(
+                        value: _statusFilter,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'semua',
+                            child: Text('Semua'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'aktif',
+                            child: Text('Aktif'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'tidak_aktif',
+                            child: Text('Tidak Aktif'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'meninggal',
+                            child: Text('Meninggal'),
+                          ),
+                        ],
+                        onChanged: (val) {
+                          setState(() {
+                            _statusFilter = val!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               Expanded(
                 child: FutureBuilder<List<BalitaModel>>(
                   future: _balitaList,
@@ -417,22 +469,14 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
                         itemBuilder: (context, index) {
                           return _buildBalitaListItem(filteredBalita[index]);
                         },
-                      ),
-                    );
+                      ), // penutup ListView.builder
+                    ); // penutup RefreshIndicator
                   },
-                ),
-              ),
+                ), // penutup FutureBuilder
+              ), // penutup Expanded
             ],
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed:
-            () => _navigateAndRefresh(
-              BalitaFormScreen(posyanduId: widget.posyandu.id!),
-            ),
-        tooltip: 'Tambah Balita',
-        child: const Icon(Icons.add),
       ),
     );
   }

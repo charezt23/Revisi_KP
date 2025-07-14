@@ -1,5 +1,5 @@
-import 'package:flutter_application_1/API/BaseURL.dart';
-import 'package:flutter_application_1/models/balitaModel.dart';
+import 'package:flutter_application_1/data/API/BaseURL.dart';
+import 'package:flutter_application_1/data/models/balitaModel.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 

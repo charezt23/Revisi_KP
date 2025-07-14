@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/models/balitaModel.dart';
-import 'package:flutter_application_1/models/kematian.dart'; // Impor model Kematian
-import 'package:flutter_application_1/API/kematianService.dart';
-import 'package:flutter_application_1/widgets/login_background.dart';
+import 'package:flutter_application_1/data/API/kematianService.dart';
+import 'package:flutter_application_1/data/models/balitaModel.dart';
+import 'package:flutter_application_1/data/models/kematian.dart';
+import 'package:flutter_application_1/presentation/widgets/login_background.dart';
 import 'package:intl/intl.dart';
 
 class KematianFormScreen extends StatefulWidget {
@@ -100,7 +100,7 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
 
       // Logika untuk membedakan antara create dan update
       if (_isEditMode) {
-        await _kematianService.updateKematian(widget.kematianToEdit!.id!, data);
+        await _kematianService.updateKematian(widget.kematianToEdit!.id, data);
         successMessage =
             'Data kematian untuk ${widget.balita.nama} berhasil diperbarui.';
       } else {

@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'package:flutter_application_1/data/API/BaseURL.dart';
 import 'package:http/http.dart' as http;
 import '../models/kematian.dart'; // Pastikan path ini benar
-import '../API/BaseURL.dart'; // Pastikan path ini benar
 
 /// Service untuk mengelola data kematian balita melalui API.
 class KematianService {
@@ -133,7 +133,9 @@ class KematianService {
           return [];
         }
       } else {
-        throw Exception('Gagal memuat data kematian: Status ${response.statusCode}');
+        throw Exception(
+          'Gagal memuat data kematian: Status ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Gagal terhubung ke server: $e');

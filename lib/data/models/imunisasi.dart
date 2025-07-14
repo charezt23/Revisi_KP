@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter_application_1/models/balitaModel.dart';
+import 'package:flutter_application_1/data/models/balitaModel.dart';
 
 // Fungsi untuk decode list dari JSON (Sudah diperbarui dan aman dari null)
 List<Imunisasi> imunisasiFromJson(String? str, {required BalitaModel balita}) {

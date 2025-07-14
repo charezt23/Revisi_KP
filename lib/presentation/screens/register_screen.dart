@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/API/authservice.dart';
-import 'package:flutter_application_1/widgets/login_background.dart';
+import 'package:flutter_application_1/data/API/authservice.dart';
+import 'package:flutter_application_1/presentation/widgets/login_background.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
+import 'package:flutter_application_1/presentation/screens/components/custom_button.dart';
+import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -287,35 +289,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 24),
 
                     // Tombol Register
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _register,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.deepPurple,
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child:
-                          _isLoading
-                              ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 3,
-                                ),
-                              )
-                              : Text(
-                                'DAFTAR',
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
+                    CustomButton(
+                      text: _isLoading ? '' : 'DAFTAR',
+                      onPressed: _isLoading ? () {} : _register,
+                      color: Colors.deepPurple,
+                      borderRadius: 10,
                     ),
+                    if (_isLoading)
+                      const LoadingIndicator(),
                     const SizedBox(height: 24),
 
                     // Link ke Login

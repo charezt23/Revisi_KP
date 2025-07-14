@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/register_screen.dart';
-import 'package:flutter_application_1/widgets/login_background.dart';
+import 'package:flutter_application_1/presentation/screens/register_screen.dart';
+import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_application_1/API/authservice.dart';
+import 'package:flutter_application_1/data/API/authservice.dart';
 import 'Home_Screen.dart'
     hide LoginBackground; // <-- Import HomeScreen untuk navigasi
+import 'package:flutter_application_1/presentation/screens/components/custom_button.dart';
+import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -164,32 +166,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Widget untuk tombol login
   Widget _buildLoginButton() {
-    return ElevatedButton(
-      onPressed: _isLoading ? null : _login,
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        backgroundColor: Colors.deepPurple,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      child:
-          _isLoading
-              ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 3,
-                ),
-              )
-              : Text(
-                'MASUK',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.white,
-                ),
-              ),
+    return CustomButton(
+      text: 'MASUK',
+      onPressed: _isLoading ? () {} : _login,
+      color: Colors.deepPurple,
+      borderRadius: 10,
     );
   }
 
@@ -224,6 +205,11 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ],
     );
+  }
+
+  // Widget untuk loading indicator
+  Widget _buildLoadingWidget() {
+    return const LoadingIndicator();
   }
 
   @override

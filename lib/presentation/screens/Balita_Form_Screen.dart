@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/API/BalitaService.dart';
-import 'package:flutter_application_1/models/balitaModel.dart';
-import 'package:flutter_application_1/widgets/login_background.dart';
+import 'package:flutter_application_1/data/API/BalitaService.dart';
+import 'package:flutter_application_1/data/models/balitaModel.dart';
+import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
+import 'package:flutter_application_1/presentation/screens/components/custom_button.dart';
+import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
 
 class BalitaFormScreen extends StatefulWidget {
   final int posyanduId;
@@ -239,30 +241,14 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
                                 : null,
                   ),
                   const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed:
-                        _isLoading
-                            ? null
-                            : _simpanData, // Nonaktifkan tombol saat loading
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child:
-                        _isLoading
-                            ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
-                              ),
-                            )
-                            : Text(
-                              widget.balita == null
-                                  ? 'Tambah'
-                                  : 'Simpan Perubahan',
-                            ),
+                  CustomButton(
+                    text: _isLoading ? '' : 'Simpan',
+                    onPressed: _isLoading ? () {} : _simpanData,
+                    color: Colors.blue,
+                    borderRadius: 8.0,
                   ),
+                  if (_isLoading)
+                    const LoadingIndicator(),
                 ],
               ),
             ),

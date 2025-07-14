@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/Balita_Form_Screen.dart';
+import 'package:flutter_application_1/presentation/screens/Balita_Form_Screen.dart';
+import 'package:flutter_application_1/presentation/screens/Pemeriksaan/KematianFormScreen.dart';
+import 'package:flutter_application_1/presentation/screens/Pemeriksaan/KunjunganFormScreen.dart';
+import 'package:flutter_application_1/presentation/screens/Pemeriksaan/imunisasi_form_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
+import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
 
 // Import services, models, dan file yang relevan
-import '../API/ImunisasiService.dart';
-import '../API/KunjunganBalitaService.dart';
-import '../API/kematianService.dart';
-import '../API/BalitaService.dart';
-import '../models/KunjunganBalitaModel.dart';
-import '../models/kematian.dart';
-import '../models/imunisasi.dart';
-import '../models/balitaModel.dart';
-import './Pemeriksaan/KunjunganFormScreen.dart';
-import './Pemeriksaan/KematianFormScreen.dart';
-import './Pemeriksaan/imunisasi_form_screen.dart';
-import '../widgets/login_background.dart';
+import '../../data/API/ImunisasiService.dart';
+import '../../data/API/KunjunganBalitaService.dart';
+import '../../data/API/kematianService.dart';
+import '../../data/API/BalitaService.dart';
+import '../../data/models/KunjunganBalitaModel.dart';
+import '../../data/models/kematian.dart';
+import '../../data/models/imunisasi.dart';
+import '../../data/models/balitaModel.dart';
 
 // Kelas Enum dan Data Wrapper
 enum JenisPemeriksaan { imunisasi, kunjungan, kematian }
@@ -298,7 +299,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
             appBar: AppBar(title: Text('Memuat...')),
-            body: const Center(child: CircularProgressIndicator()),
+            body: const Center(child: LoadingIndicator()),
           );
         }
         if (snapshot.hasError) {

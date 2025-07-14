@@ -1,8 +1,8 @@
 import 'dart:convert';
+import 'package:flutter_application_1/data/API/BaseURL.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/auth_model.dart';
-import 'BaseURL.dart';
 
 class AuthService {
   // Secure storage instance

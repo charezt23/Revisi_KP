@@ -1,4 +1,4 @@
-import 'package:flutter_application_1/models/posyanduModel.dart';
+import 'package:flutter_application_1/data/models/posyanduModel.dart';
 
 class BalitaModel {
   int? id;

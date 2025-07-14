@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/API/authservice.dart';
-import 'package:flutter_application_1/screens/From_posyandu.dart';
-import 'package:flutter_application_1/screens/Daftar_Balita.dart';
-import 'package:flutter_application_1/screens/login_screen.dart';
+import 'package:flutter_application_1/data/API/authservice.dart';
+import 'package:flutter_application_1/presentation/screens/Pemeriksaan/From_posyandu.dart';
+import 'package:flutter_application_1/presentation/screens/Daftar_Balita.dart';
+import 'package:flutter_application_1/presentation/screens/login_screen.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_application_1/widgets/login_background.dart';
-import '../API/PosyanduService.dart';
-import '../models/posyanduModel.dart';
+import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
+import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
+import '../../data/API/PosyanduService.dart';
+import '../../data/models/posyanduModel.dart';
 
 // ===================================================================
 // Widget Utama HomeScreen
@@ -305,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Widget Loading State
   Widget _buildLoadingState() {
-    return const Center(child: CircularProgressIndicator());
+    return const Center(child: LoadingIndicator());
   }
 
   @override

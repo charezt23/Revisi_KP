@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/API/BalitaService.dart';
-import 'package:flutter_application_1/API/kematianService.dart';
-import 'package:flutter_application_1/models/posyanduModel.dart';
-import 'package:flutter_application_1/models/balitaModel.dart';
-import 'package:flutter_application_1/screens/Balita_Form_Screen.dart';
-import 'package:flutter_application_1/screens/balita_detail_screen.dart';
-import 'package:flutter_application_1/widgets/login_background.dart';
-import 'package:intl/intl.dart';
-import 'package:flutter_application_1/models/kematian.dart';
+import 'package:flutter_application_1/data/API/BalitaService.dart';
+import 'package:flutter_application_1/data/API/kematianService.dart';
+import 'package:flutter_application_1/data/models/kematian.dart';
+import 'package:flutter_application_1/data/models/posyanduModel.dart';
+import 'package:flutter_application_1/data/models/balitaModel.dart';
+import 'package:flutter_application_1/presentation/screens/Balita_Form_Screen.dart';
+import 'package:flutter_application_1/presentation/screens/balita_detail_screen.dart';
+import 'package:flutter_application_1/presentation/screens/components/balita_card.dart';
+import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
+import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
+import 'package:flutter_application_1/presentation/screens/components/section_container.dart';
+import 'package:flutter_application_1/presentation/screens/components/status_container.dart';
 
 // Tambahkan RouteObserver global
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
@@ -220,60 +223,12 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
     final bool isDeceased = balita.tanggalKematian != null;
     final int age = _calculateAge(balita.tanggalLahir);
 
-    return Card(
-      // Beri warna latar yang berbeda jika balita meninggal
-      color:
-          isDeceased
-              ? Colors.red.withOpacity(0.1)
-              : age >= 6
-              ? Colors.orange.withOpacity(0.1)
-              : Colors.white.withOpacity(0.9),
-      child: ListTile(
-        // Ganti ikon berdasarkan status
-        leading: Icon(
-          isDeceased
-              ? Icons.person_off_outlined
-              : age >= 6
-              ? Icons.history
-              : Icons.child_care,
-          color:
-              isDeceased
-                  ? Colors.red.shade700
-                  : age >= 6
-                  ? Colors.orange.shade700
-                  : Theme.of(context).primaryColor,
-        ),
-        title: Text(
-          balita.nama,
-          style: TextStyle(
-            // Beri coretan pada nama jika balita meninggal
-            decoration: isDeceased ? TextDecoration.lineThrough : null,
-            color: isDeceased ? Colors.red.shade700 : null,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('NIK: ${balita.nik}'),
-            Text(
-              // Tampilkan tanggal kematian jika ada, jika tidak tampilkan nama ibu
-              isDeceased
-                  ? 'Meninggal: ${DateFormat('dd MMMM yyyy').format(balita.tanggalKematian!)}'
-                  : 'Ibu: ${balita.namaIbu} | Usia: $age tahun',
-            ),
-          ],
-        ),
-        onTap: () => _navigateAndRefresh(BalitaDetailScreen(balita: balita)),
-        // Sembunyikan tombol hapus jika balita sudah meninggal
-        trailing:
-            isDeceased
-                ? null
-                : IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => _hapusBalita(balita),
-                  tooltip: 'Hapus Balita',
-                ),
-      ),
+    return BalitaCard(
+      balita: balita,
+      age: age,
+      isDeceased: isDeceased,
+      onTap: () => _navigateAndRefresh(BalitaDetailScreen(balita: balita)),
+      onDelete: isDeceased ? null : () => _hapusBalita(balita),
     );
   }
 
@@ -285,23 +240,7 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
           children: [
             Expanded(child: Text(widget.posyandu.namaPosyandu)),
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color:
-                    _showHistoryMode
-                        ? Colors.orange.withOpacity(0.15)
-                        : Colors.blue.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _showHistoryMode ? 'Riwayat' : 'Aktif',
-                style: TextStyle(
-                  color: _showHistoryMode ? Colors.orange : Colors.blue,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            StatusContainer(showHistoryMode: _showHistoryMode),
           ],
         ),
         backgroundColor: Colors.transparent,
@@ -336,8 +275,7 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
               // Status indicator (dihilangkan sesuai permintaan)
               // const SizedBox(height: 8),
               // Search Bar
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
+              SectionContainer(
                 child: TextField(
                   controller: _searchController,
                   onChanged: (value) {
@@ -361,12 +299,6 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
                               },
                             )
                             : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.9),
                   ),
                 ),
               ), // penutup Container search bar
@@ -415,7 +347,7 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
                   future: _balitaList,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const Center(child: LoadingIndicator());
                     }
                     if (snapshot.hasError) {
                       return Center(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/API/KunjunganBalitaService.dart';
-import 'package:flutter_application_1/models/KunjunganBalitaModel.dart';
-import 'package:flutter_application_1/models/balitaModel.dart';
-import 'package:flutter_application_1/widgets/login_background.dart';
+import 'package:flutter_application_1/data/API/KunjunganBalitaService.dart';
+import 'package:flutter_application_1/data/models/KunjunganBalitaModel.dart';
+import 'package:flutter_application_1/data/models/balitaModel.dart';
+import 'package:flutter_application_1/presentation/widgets/login_background.dart';
 import 'package:intl/intl.dart';
 
 class KunjunganFormScreen extends StatefulWidget {

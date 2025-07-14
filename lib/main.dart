@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/Home_Screen.dart';
-import 'package:flutter_application_1/screens/login_screen.dart';
-import 'package:flutter_application_1/API/authservice.dart';
+import 'package:flutter_application_1/presentation/screens/Home_Screen.dart';
+import 'package:flutter_application_1/presentation/screens/login_screen.dart';
+import 'package:flutter_application_1/data/API/authservice.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Pencatatan Kesehatan',
+      debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

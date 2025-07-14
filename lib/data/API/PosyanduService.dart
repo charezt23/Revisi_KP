@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter_application_1/API/BaseURL.dart';
-import 'package:flutter_application_1/API/authservice.dart';
-import 'package:flutter_application_1/models/posyanduModel.dart';
+import 'package:flutter_application_1/data/API/BaseURL.dart';
+import 'package:flutter_application_1/data/API/authservice.dart';
+import 'package:flutter_application_1/data/models/posyanduModel.dart';
 import 'package:http/http.dart' as http;
 
 class Posyanduservice {

@@ -23,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final Posyanduservice _posyanduService = Posyanduservice();
   List<PosyanduModel> _posyanduList = [];
   bool _isLoading = true;
+  
 
   @override
   void initState() {
@@ -315,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         const LoginBackground(),
         Scaffold(
-          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+          backgroundColor: const Color.fromARGB(200, 255, 255, 255),
           appBar: _buildAppBar(),
           body:
               _isLoading

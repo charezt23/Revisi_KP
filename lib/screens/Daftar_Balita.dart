@@ -3,6 +3,7 @@ import 'package:flutter_application_1/API/BalitaService.dart';
 import 'package:flutter_application_1/API/kematianService.dart';
 import 'package:flutter_application_1/models/posyanduModel.dart';
 import 'package:flutter_application_1/models/balitaModel.dart';
+import 'package:flutter_application_1/screens/Balita_Form_Screen.dart';
 import 'package:flutter_application_1/screens/balita_detail_screen.dart';
 import 'package:flutter_application_1/widgets/login_background.dart';
 import 'package:intl/intl.dart';
@@ -478,6 +479,25 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
           ),
         ],
       ),
+      floatingActionButton:
+          !_showHistoryMode // hanya tampil di mode aktif
+              ? FloatingActionButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => BalitaFormScreen(
+                            posyanduId: widget.posyandu.id!,
+                            // balita: null, // opsional, jika parameter balita wajib
+                          ),
+                    ),
+                  ).then((_) => _refreshAllData());
+                },
+                tooltip: 'Tambah Balita',
+                child: const Icon(Icons.person_add),
+              )
+              : null,
     );
   }
 }

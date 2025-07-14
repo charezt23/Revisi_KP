@@ -352,6 +352,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
   }
 
   Widget _buildContent(BalitaDetailData data) {
+    final bool isDeceased = data.dataKematian != null;
     return Stack(
       children: [
         const LoginBackground(),
@@ -360,24 +361,195 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
           children: [
             _buildInfoDasar(dataKematian: data.dataKematian),
             const SizedBox(height: 16),
-            if (data.dataKematian == null) ...[
-              _buildRingkasanPemeriksaanTerakhir(
-                jenis: 'Kunjungan',
-                riwayat: data.riwayatKunjungan,
-                color: Colors.blue,
-              ),
-              const SizedBox(height: 16),
-              _buildRingkasanPemeriksaanTerakhir(
-                jenis: 'Imunisasi',
-                riwayat: data.riwayatImunisasi,
-                color: Colors.green,
-              ),
-              const SizedBox(height: 16),
-            ],
-            _buildSemuaRiwayatPemeriksaan(_gabungkanDanUrutkanRiwayat(data)),
+            _buildRingkasanPemeriksaanTerakhir(
+              jenis: 'Kunjungan',
+              riwayat: data.riwayatKunjungan,
+              color: Colors.blue,
+              onShowRiwayat: () {
+                showDialog(
+                  context: context,
+                  builder:
+                      (_) => AlertDialog(
+                        title: Text('Riwayat Kunjungan'),
+                        content: SizedBox(
+                          width: double.maxFinite,
+                          child: ListView(
+                            shrinkWrap: true,
+                            children:
+                                data.riwayatKunjungan
+                                    .map(
+                                      (item) => ListTile(
+                                        title: Text(
+                                          DateFormat(
+                                            'dd MMM yyyy',
+                                          ).format(item.tanggalKunjungan),
+                                        ),
+                                        subtitle: Text(
+                                          'BB: ${item.beratBadan} kg, TB: ${item.tinggiBadan} cm',
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Tutup'),
+                          ),
+                        ],
+                      ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            // Imunisasi selalu tampil, baik meninggal maupun tidak
+            _buildRingkasanPemeriksaanTerakhir(
+              jenis: 'Imunisasi',
+              riwayat: data.riwayatImunisasi,
+              color: Colors.green,
+              onShowRiwayat: () {
+                showDialog(
+                  context: context,
+                  builder:
+                      (_) => AlertDialog(
+                        title: Text('Riwayat Imunisasi'),
+                        content: SizedBox(
+                          width: double.maxFinite,
+                          child: ListView(
+                            shrinkWrap: true,
+                            children:
+                                data.riwayatImunisasi
+                                    .map(
+                                      (i) => ListTile(
+                                        title: Text(
+                                          DateFormat(
+                                            'dd MMM yyyy',
+                                          ).format(i.tanggalImunisasi),
+                                        ),
+                                        subtitle: Text(
+                                          'Jenis: ${i.jenisImunisasi}',
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Tutup'),
+                          ),
+                        ],
+                      ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            _buildSemuaRiwayatPemeriksaan(
+              _gabungkanDanUrutkanRiwayat(data),
+              isDeceased: isDeceased,
+            ),
           ],
         ),
       ],
+    );
+  }
+
+  // Edit fungsi yang sudah ada, tambahkan parameter opsional isDeceased
+  Widget _buildSemuaRiwayatPemeriksaan(
+    List<PemeriksaanItem> riwayat, {
+    bool isDeceased = false,
+  }) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Riwayat Gabungan',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const Divider(),
+            if (riwayat.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text('Tidak ada data riwayat.'),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: riwayat.length,
+                itemBuilder:
+                    (context, index) =>
+                        _buildPemeriksaanListTile(riwayat[index]),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- WIDGET UNTUK MENAMPILKAN TIAP ITEM RIWAYAT DENGAN AKSI EDIT/HAPUS DAN REFRESH ---
+  Widget _buildPemeriksaanListTile(PemeriksaanItem item) {
+    final isKematian = item.jenis == 'Kematian';
+    final tanggalFormatted = DateFormat('dd MMM yyyy').format(item.tanggal);
+    final icon =
+        isKematian
+            ? Icons.person_off_outlined
+            : (item.jenis == 'Kunjungan'
+                ? Icons.medical_services
+                : Icons.vaccines);
+    final color =
+        isKematian
+            ? Colors.red.shade700
+            : (item.jenis == 'Kunjungan' ? Colors.blue : Colors.green);
+
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(
+        '${item.jenis} pada ${tanggalFormatted}',
+        style: TextStyle(color: color),
+      ),
+      subtitle:
+          isKematian
+              ? Text(
+                'Penyebab: ${(item.data as Kematian).penyebab?.isNotEmpty == true ? (item.data as Kematian).penyebab : "Tidak dicatat"}',
+              )
+              : Text(
+                item.jenis == 'Kunjungan'
+                    ? 'BB: ${(item.data as KunjunganModel).beratBadan} kg, TB: ${(item.data as KunjunganModel).tinggiBadan} cm'
+                    : 'Jenis Imunisasi: ${(item.data as Imunisasi).jenisImunisasi}',
+              ),
+      trailing:
+          isKematian
+              ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blue),
+                    tooltip: 'Edit',
+                    onPressed: () async {
+                      await _handleKematianAction(item.data, isEdit: true);
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    tooltip: 'Hapus',
+                    onPressed: () async {
+                      await _handleKematianAction(item.data, isEdit: false);
+                    },
+                  ),
+                ],
+              )
+              : null,
+      onTap: () {
+        // Bisa navigasi ke detail jika diinginkan
+      },
     );
   }
 
@@ -527,6 +699,7 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     required String jenis,
     required List<dynamic> riwayat,
     required Color color,
+    required VoidCallback onShowRiwayat,
   }) {
     if (riwayat.isEmpty) {
       return Card(child: ListTile(title: Text("Belum ada riwayat $jenis.")));
@@ -547,9 +720,21 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '$jenis Terakhir',
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '$jenis Terakhir',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.history, color: Colors.grey),
+                  tooltip: 'Lihat Riwayat $jenis',
+                  onPressed: onShowRiwayat,
+                ),
+                // Edit dan Delete button dihapus sesuai permintaan
+              ],
             ),
             const Divider(),
             Text('Tanggal: ${DateFormat('dd MMM yyyy').format(tanggal)}'),
@@ -557,77 +742,6 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildSemuaRiwayatPemeriksaan(List<PemeriksaanItem> riwayat) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Riwayat Gabungan',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const Divider(),
-            if (riwayat.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Text('Tidak ada data riwayat.'),
-                ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: riwayat.length,
-                itemBuilder:
-                    (context, index) =>
-                        _buildPemeriksaanListTile(riwayat[index]),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // <-- WIDGET UNTUK MENAMPILKAN TIAP ITEM RIWAYAT -->
-  Widget _buildPemeriksaanListTile(PemeriksaanItem item) {
-    final isKematian = item.jenis == 'Kematian';
-    final tanggalFormatted = DateFormat('dd MMM yyyy').format(item.tanggal);
-    final icon =
-        isKematian
-            ? Icons.person_off_outlined
-            : (item.jenis == 'Kunjungan'
-                ? Icons.medical_services
-                : Icons.vaccines);
-    final color =
-        isKematian
-            ? Colors.red.shade700
-            : (item.jenis == 'Kunjungan' ? Colors.blue : Colors.green);
-
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(
-        '${item.jenis} pada ${tanggalFormatted}',
-        style: TextStyle(color: color),
-      ),
-      subtitle:
-          isKematian
-              ? Text(
-                'Penyebab: ${(item.data as Kematian).penyebab?.isNotEmpty == true ? (item.data as Kematian).penyebab : "Tidak dicatat"}',
-              )
-              : Text(
-                item.jenis == 'Kunjungan'
-                    ? 'BB: ${(item.data as KunjunganModel).beratBadan} kg, TB: ${(item.data as KunjunganModel).tinggiBadan} cm'
-                    : 'Jenis Imunisasi: ${(item.data as Imunisasi).jenisImunisasi}',
-              ),
-      onTap: () {
-        // Aksi ketika item ditekan, bisa navigasi ke detail atau edit
-      },
     );
   }
 }

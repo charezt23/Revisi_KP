@@ -83,18 +83,156 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // Widget untuk input email
+  Widget _buildEmailField() {
+    return TextField(
+      controller: _emailController,
+      keyboardType: TextInputType.emailAddress,
+      decoration: InputDecoration(
+        hintText: 'Email',
+        prefixIcon: const Icon(Icons.email_outlined, color: Colors.black54),
+        filled: true,
+        fillColor: const Color.fromARGB(255, 136, 136, 136).withOpacity(0.75),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 16,
+          horizontal: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  // Widget untuk input password
+  Widget _buildPasswordField() {
+    return TextField(
+      controller: _passwordController,
+      obscureText: !_isPasswordVisible,
+      decoration: InputDecoration(
+        hintText: 'Password',
+        prefixIcon: const Icon(Icons.lock_outline, color: Colors.black54),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+          ),
+          onPressed:
+              () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+        ),
+        filled: true,
+        fillColor: const Color.fromARGB(255, 136, 136, 136).withOpacity(0.75),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 16,
+          horizontal: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  // Widget untuk checkbox remember me
+  Widget _buildRememberMe() {
+    return Row(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Checkbox(
+                activeColor: Colors.deepPurple,
+                value: _rememberMe,
+                onChanged: (value) => setState(() => _rememberMe = value!),
+              ),
+              Flexible(
+                child: Text(
+                  'Ingat Saya',
+                  style: GoogleFonts.poppins(
+                    color: _rememberMe ? Colors.deepPurple : Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget untuk tombol login
+  Widget _buildLoginButton() {
+    return ElevatedButton(
+      onPressed: _isLoading ? null : _login,
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        backgroundColor: Colors.deepPurple,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      child:
+          _isLoading
+              ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
+              )
+              : Text(
+                'MASUK',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+    );
+  }
+
+  // Widget untuk bagian register
+  Widget _buildRegisterSection() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Belum punya akun?",
+          style: GoogleFonts.poppins(
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(
+            textStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          ),
+          onPressed: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const RegisterScreen()));
+          },
+          child: Text(
+            'Daftar di sini',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              color: Colors.deepPurple,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor: Colors.grey[100],  Hapus background dari Scaffold
-      resizeToAvoidBottomInset:
-          false, // Mencegah resize otomatis saat keyboard muncul
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          // Background di belakang
           const LoginBackground(),
-
-          // Konten di atas background
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -107,14 +245,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    // Replace the Icon and "Selamat Datang" text with the image
-                    Image.asset(
-                      'assets/images/iconGambar.png', // Corrected path and filename
-                      height: 200,
-                    ),
-
-                    // Removed the "Selamat Datang" text
-                    //const SizedBox(height: 8),
+                    Image.asset('assets/images/iconGambar.png', height: 200),
                     Text(
                       'Masuk untuk melanjutkan pencatatan',
                       textAlign: TextAlign.center,
@@ -125,182 +256,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 40),
-
-                    // Input Field Email
-                    TextField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        hintText: 'Email',
-                        prefixIcon: const Icon(
-                          Icons.email_outlined,
-                          color: Colors.black54,
-                        ),
-                        filled: true,
-                        fillColor: const Color.fromARGB(
-                          255,
-                          136,
-                          136,
-                          136,
-                        ).withOpacity(0.75),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 16,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
+                    _buildEmailField(),
                     const SizedBox(height: 16),
-
-                    // Input Field Password
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: !_isPasswordVisible,
-                      decoration: InputDecoration(
-                        hintText: 'Password',
-                        prefixIcon: const Icon(
-                          Icons.lock_outline,
-                          color: Colors.black54,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isPasswordVisible
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed:
-                              () => setState(
-                                () => _isPasswordVisible = !_isPasswordVisible,
-                              ),
-                        ),
-                        filled: true,
-                        fillColor: const Color.fromARGB(
-                          255,
-                          136,
-                          136,
-                          136,
-                        ).withOpacity(0.75),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 16,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
+                    _buildPasswordField(),
                     const SizedBox(height: 8),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Checkbox(
-                                activeColor: Colors.deepPurple,
-                                value: _rememberMe,
-                                onChanged:
-                                    (value) =>
-                                        setState(() => _rememberMe = value!),
-                              ),
-                              // Dibungkus Flexible agar teks tidak overflow di layar sempit
-                              Flexible(
-                                child: Text(
-                                  'Ingat Saya',
-                                  style: GoogleFonts.poppins(
-                                    color:
-                                        _rememberMe
-                                            ? Colors.deepPurple
-                                            : Colors.black87,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          child: Text(
-                            'Lupa Password?',
-                            style: GoogleFonts.poppins(
-                              color: Colors.deepPurple,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    _buildRememberMe(),
                     const SizedBox(height: 24),
-
-                    // Tombol Login Utama
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.deepPurple,
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child:
-                          _isLoading
-                              ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 3,
-                                ),
-                              )
-                              : Text(
-                                'MASUK',
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
-                    ),
+                    _buildLoginButton(),
                     const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Belum punya akun?",
-                          style: GoogleFonts.poppins(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            textStyle: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const RegisterScreen(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'Daftar di sini',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.deepPurple,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    _buildRegisterSection(),
                     const SizedBox(height: 20),
                   ],
                 ),

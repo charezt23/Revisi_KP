@@ -178,158 +178,151 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Widget AppBar
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      title: const Text('Manajer Posyandu'),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      elevation: 0,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: _showLogoutDialog,
+          tooltip: 'Logout',
+        ),
+        PopupMenuButton<String>(
+          onSelected: (value) async {
+            if (value == 'profile') {
+              final user = await AuthService.getCurrentUser();
+              if (user != null && mounted) _showUserInfo(user);
+            }
+          },
+          itemBuilder:
+              (BuildContext context) => [
+                const PopupMenuItem<String>(
+                  value: 'profile',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person),
+                      SizedBox(width: 8),
+                      Text('Profil'),
+                    ],
+                  ),
+                ),
+              ],
+        ),
+      ],
+    );
+  }
+
+  // Widget FloatingActionButton
+  Widget _buildFAB() {
+    return FloatingActionButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const KohortFormScreen()),
+        ).then((_) => _fetchPosyanduData());
+      },
+      child: const Icon(Icons.add),
+    );
+  }
+
+  // Widget Card Posyandu
+  Widget _buildPosyanduCard(PosyanduModel posyandu) {
+    return Card(
+      color: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.9),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ListTile(
+        leading: const Icon(Icons.local_hospital, color: Colors.red, size: 40),
+        title: Text(
+          posyandu.namaPosyandu,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Dibuat: ${posyandu.createdAt != null ? DateFormat('dd MMM yyyy').format(posyandu.createdAt!) : 'N/A'}',
+            ),
+            Text('Jumlah Balita: ${posyandu.balitaCount ?? 0}'),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              onPressed: () => _hapusPosyandu(posyandu),
+              tooltip: 'Hapus Posyandu',
+            ),
+            const Icon(Icons.chevron_right, color: Colors.blue),
+          ],
+        ),
+        onTap: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => KohortDetailScreen(posyandu: posyandu),
+            ),
+          );
+          if (result == true && mounted) {
+            _fetchPosyanduData();
+          }
+        },
+      ),
+    );
+  }
+
+  // Widget List Posyandu
+  Widget _buildPosyanduList() {
+    return RefreshIndicator(
+      onRefresh: _fetchPosyanduData,
+      child: ListView.builder(
+        itemCount: _posyanduList.length,
+        itemBuilder: (context, index) {
+          final posyandu = _posyanduList[index];
+          return _buildPosyanduCard(posyandu);
+        },
+      ),
+    );
+  }
+
+  // Widget Empty State
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Text(
+        'Belum ada data Posyandu. Tekan + untuk membuat.',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.black87,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  // Widget Loading State
+  Widget _buildLoadingState() {
+    return const Center(child: CircularProgressIndicator());
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Gunakan Stack untuk menumpuk background dengan konten
     return Stack(
       children: [
-        // LAPISAN 1: Widget background
         const LoginBackground(),
-
-        // LAPISAN 2: Scaffold yang berisi UI
         Scaffold(
           backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-          appBar: AppBar(
-            title: const Text('Manajer Posyandu'),
-            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-            elevation: 0,
-            actions: [
-              // Tombol ikon untuk logout
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: _showLogoutDialog,
-                tooltip: 'Logout',
-              ),
-              // Menu untuk melihat info user
-              PopupMenuButton<String>(
-                onSelected: (value) async {
-                  if (value == 'profile') {
-                    // Tampilkan info user
-                    final user = await AuthService.getCurrentUser();
-                    if (user != null && mounted) _showUserInfo(user);
-                  }
-                },
-                itemBuilder:
-                    (BuildContext context) => [
-                      const PopupMenuItem<String>(
-                        value: 'profile',
-                        child: Row(
-                          children: [
-                            Icon(Icons.person),
-                            SizedBox(width: 8),
-                            Text('Profil'),
-                          ],
-                        ),
-                      ),
-                    ],
-              ),
-            ],
-          ),
+          appBar: _buildAppBar(),
           body:
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? _buildLoadingState()
                   : _posyanduList.isEmpty
-                  ? const Center(
-                    child: Text(
-                      'Belum ada data Posyandu. Tekan + untuk membuat.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.black87,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  )
-                  : RefreshIndicator(
-                    onRefresh: _fetchPosyanduData,
-                    child: ListView.builder(
-                      itemCount: _posyanduList.length,
-                      itemBuilder: (context, index) {
-                        final posyandu = _posyanduList[index];
-                        return Card(
-                          color: const Color.fromARGB(
-                            255,
-                            255,
-                            255,
-                            255,
-                          ).withOpacity(0.9),
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: ListTile(
-                            leading: const Icon(
-                              Icons.local_hospital,
-                              color: Colors.red,
-                              size: 40,
-                            ),
-                            title: Text(
-                              posyandu.namaPosyandu,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Dibuat: ${posyandu.createdAt != null ? DateFormat('dd MMM yyyy').format(posyandu.createdAt!) : 'N/A'}',
-                                ),
-                                Text(
-                                  'Jumlah Balita: ${posyandu.balitaCount ?? 0}',
-                                ),
-                              ],
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.red,
-                                  ),
-                                  onPressed: () => _hapusPosyandu(posyandu),
-                                  tooltip: 'Hapus Posyandu',
-                                ),
-                                const Icon(
-                                  Icons.chevron_right,
-                                  color: Colors.blue,
-                                ),
-                              ],
-                            ),
-                            onTap: () async {
-                              // Navigasi ke detail screen
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => KohortDetailScreen(
-                                        posyandu: posyandu,
-                                      ),
-                                ),
-                              );
-                              // Jika layar detail mengembalikan 'true' (artinya ada perubahan),
-                              // maka panggil _fetchPosyanduData() untuk refresh.
-                              if (result == true && mounted) {
-                                _fetchPosyanduData();
-                              }
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const KohortFormScreen()),
-              ).then(
-                (_) => _fetchPosyanduData(),
-              ); // Muat ulang data setelah kembali
-            },
-            child: const Icon(Icons.add),
-          ),
+                  ? _buildEmptyState()
+                  : _buildPosyanduList(),
+          floatingActionButton: _buildFAB(),
         ),
       ],
     );

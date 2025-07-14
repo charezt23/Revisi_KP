@@ -195,9 +195,9 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
                     validator: (value) {
                       final nik = value?.trim() ?? '';
                       if (nik.isEmpty) return 'NIK tidak boleh kosong';
-                      if (nik.length != 16) return 'NIK harus 16 digit';
-                      if (!RegExp(r'^\d{16}\$').hasMatch(nik))
+                      if (!RegExp(r'^\d+$').hasMatch(nik))
                         return 'NIK hanya boleh berisi angka';
+                      if (nik.length != 16) return 'NIK harus 16 digit';
                       return null;
                     },
                   ),

@@ -6,8 +6,6 @@ import 'package:flutter_application_1/presentation/screens/Pemeriksaan/imunisasi
 import 'package:intl/intl.dart';
 import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
 import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
-
-// Import services, models, dan file yang relevan
 import '../../data/API/ImunisasiService.dart';
 import '../../data/API/KunjunganBalitaService.dart';
 import '../../data/API/kematianService.dart';
@@ -16,6 +14,15 @@ import '../../data/models/KunjunganBalitaModel.dart';
 import '../../data/models/kematian.dart';
 import '../../data/models/imunisasi.dart';
 import '../../data/models/balitaModel.dart';
+
+// --- METODE UNTUK MENGAMBIL JENIS IMUNISASI YANG BELUM DILAKUKAN ---
+List<String> getJenisImunisasiBelum(
+  BalitaDetailData data,
+  List<String> semuaJenis,
+) {
+  final sudah = data.riwayatImunisasi.map((i) => i.jenisImunisasi).toSet();
+  return semuaJenis.where((jenis) => !sudah.contains(jenis)).toList();
+}
 
 // Kelas Enum dan Data Wrapper
 enum JenisPemeriksaan { imunisasi, kunjungan, kematian }
@@ -135,6 +142,18 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
   // --- LOGIKA AKSI ---
 
   Future<void> _lakukanPemeriksaan() async {
+    // Ambil data detail terbaru
+    final detailData = await _detailData;
+    // Daftar semua jenis imunisasi yang tersedia
+    final semuaJenisImunisasi = <String>[
+      'Imunisasi A',
+      'Imunisasi B',
+    ]; // Ganti sesuai kebutuhan
+    final jenisImunisasiBelum = getJenisImunisasiBelum(
+      detailData,
+      semuaJenisImunisasi,
+    );
+
     final jenis = await showDialog<JenisPemeriksaan>(
       context: context,
       builder:
@@ -149,14 +168,15 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
                   child: Text('Kunjungan'),
                 ),
               ),
-              SimpleDialogOption(
-                onPressed:
-                    () => Navigator.pop(context, JenisPemeriksaan.imunisasi),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0),
-                  child: Text('Imunisasi'),
+              if (jenisImunisasiBelum.isNotEmpty)
+                SimpleDialogOption(
+                  onPressed:
+                      () => Navigator.pop(context, JenisPemeriksaan.imunisasi),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text('Imunisasi'),
+                  ),
                 ),
-              ),
               SimpleDialogOption(
                 onPressed:
                     () => Navigator.pop(context, JenisPemeriksaan.kematian),
@@ -170,11 +190,21 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     );
 
     if (jenis == null || !mounted) return;
-    final Widget nextPage = switch (jenis) {
-      JenisPemeriksaan.kunjungan => KunjunganFormScreen(balita: _currentBalita),
-      JenisPemeriksaan.imunisasi => ImunisasiFormScreen(balita: _currentBalita),
-      JenisPemeriksaan.kematian => KematianFormScreen(balita: _currentBalita),
-    };
+    Widget nextPage;
+    switch (jenis) {
+      case JenisPemeriksaan.kunjungan:
+        nextPage = KunjunganFormScreen(balita: _currentBalita);
+        break;
+      case JenisPemeriksaan.imunisasi:
+        nextPage = ImunisasiFormScreen(
+          balita: _currentBalita,
+          jenisImunisasiTersedia: jenisImunisasiBelum,
+        );
+        break;
+      case JenisPemeriksaan.kematian:
+        nextPage = KematianFormScreen(balita: _currentBalita);
+        break;
+    }
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => nextPage),

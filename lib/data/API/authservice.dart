@@ -88,10 +88,23 @@ class AuthService {
 
   // Logout - hapus semua data
   static Future<void> logout() async {
-    await _secureStorage.delete(key: _tokenKey);
-    await _secureStorage.delete(key: _userIdKey);
-    await _secureStorage.delete(key: _userNameKey);
-    await _secureStorage.delete(key: _userEmailKey);
+    try {
+      final response = await http.post(
+        Uri.parse('$base_url/logout'),
+        headers: await getAuthHeaders(),
+      );
+      if (response.statusCode == 200) {
+        await _secureStorage.delete(key: _tokenKey);
+        await _secureStorage.delete(key: _userIdKey);
+        await _secureStorage.delete(key: _userNameKey);
+        await _secureStorage.delete(key: _userEmailKey);
+        print('Logout successful.');
+      } else {
+        throw Exception('Logout failed: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('Error during logout: $e');
+    }
   }
 
   // Clear all secure storage (untuk keperluan debugging)

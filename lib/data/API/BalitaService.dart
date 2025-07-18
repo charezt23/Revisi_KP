@@ -84,6 +84,33 @@ class Balitaservice {
     }
   }
 
+  Future<List<BalitaModel>> GetBalitaByPosyanduwithnotimunisasi(
+    id_posyandu,
+  ) async {
+    try {
+      final response = await http
+          .get(Uri.parse(base_url + '/balita/notimunisasi/${id_posyandu}'))
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        print('Response status: ${response.statusCode}');
+        Map<String, dynamic> responDecode = json.decode(response.body);
+        List<dynamic> data = responDecode['data'];
+
+        List<BalitaModel> balitaList =
+            data.map((item) => BalitaModel.fromJson(item)).toList();
+        return balitaList;
+      } else {
+        print('Error: ${response.reasonPhrase}');
+        throw Exception('Gagal memuat data balita: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print(e);
+      // Lempar kembali exception agar bisa ditangani oleh FutureBuilder
+      throw Exception('Gagal memuat data balita: $e');
+    }
+  }
+
   Future<void> DeleteBalita(int id) async {
     try {
       final response = await http.delete(Uri.parse('$base_url/balita/$id'));

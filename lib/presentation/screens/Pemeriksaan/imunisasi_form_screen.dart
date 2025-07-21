@@ -8,11 +8,13 @@ import 'package:intl/intl.dart';
 class ImunisasiFormScreen extends StatefulWidget {
   final BalitaModel balita;
   final Imunisasi? imunisasiToEdit;
+  final List<String> jenisImunisasiTersedia;
 
   const ImunisasiFormScreen({
     super.key,
     required this.balita,
     this.imunisasiToEdit,
+    this.jenisImunisasiTersedia = const [],
   });
 
   @override
@@ -23,7 +25,7 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _tanggalController = TextEditingController();
   String? _jenisImunisasiTerpilih;
-  final List<String> _opsiImunisasi = ['DPT', 'Campak'];
+  late List<String> _opsiImunisasi;
 
   final _imunisasiService = ImunisasiService();
   DateTime? _selectedDate;
@@ -35,6 +37,10 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
   @override
   void initState() {
     super.initState();
+    // Set opsi imunisasi dari parameter jika ada, jika tidak pakai default
+    _opsiImunisasi = widget.jenisImunisasiTersedia.isNotEmpty
+        ? widget.jenisImunisasiTersedia
+        : ['DPT', 'Campak'];
     // Jika ini mode edit, isi form dengan data yang ada
     if (_isEditing) {
       final imunisasi = widget.imunisasiToEdit!;

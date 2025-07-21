@@ -13,6 +13,7 @@ class BalitaModel {
   PosyanduModel? posyandu;
   final DateTime? tanggalKematian;
   int? userId;
+  bool? sudahImunisasi; // status imunisasi
 
   BalitaModel({
     this.id,
@@ -26,6 +27,7 @@ class BalitaModel {
     required this.bukuKIA,
     this.posyandu,
     this.tanggalKematian, // <-- TAMBAHKAN INI DI CONSTRUCTOR
+    this.sudahImunisasi,
     this.userId,
   });
 
@@ -49,11 +51,10 @@ class BalitaModel {
               ? DateTime.parse(json['tanggal_kematian'])
               : null,
       userId: json['user_id'],
+      sudahImunisasi:
+          json['sudah_imunisasi'] == true || json['sudah_imunisasi'] == 1,
     );
   }
-
-  // Getter contoh, silakan sesuaikan logika sesuai kebutuhan
-  bool get sudahImunisasi => false;
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
@@ -72,6 +73,7 @@ class BalitaModel {
     if (userId != null) {
       data['user_id'] = userId;
     }
+    data['sudah_imunisasi'] = sudahImunisasi;
     return data;
   }
 }

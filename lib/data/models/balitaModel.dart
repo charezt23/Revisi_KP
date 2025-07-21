@@ -12,6 +12,7 @@ class BalitaModel {
   String bukuKIA;
   PosyanduModel? posyandu;
   final DateTime? tanggalKematian; // <-- TAMBAHKAN BARIS INI
+  bool? sudahImunisasi; // status imunisasi
 
   BalitaModel({
     this.id,
@@ -25,6 +26,7 @@ class BalitaModel {
     required this.bukuKIA,
     this.posyandu,
     this.tanggalKematian, // <-- TAMBAHKAN INI DI CONSTRUCTOR
+    this.sudahImunisasi,
   });
 
   factory BalitaModel.fromJson(Map<String, dynamic> json) {
@@ -42,11 +44,12 @@ class BalitaModel {
           json['posyandu'] != null
               ? PosyanduModel.fromJson(json['posyandu'])
               : null,
-      // <-- TAMBAHKAN LOGIKA INI UNTUK MEMBACA DARI JSON -->
       tanggalKematian:
           json['tanggal_kematian'] != null
               ? DateTime.parse(json['tanggal_kematian'])
               : null,
+      sudahImunisasi:
+          json['sudah_imunisasi'] == true || json['sudah_imunisasi'] == 1,
     );
   }
 
@@ -62,6 +65,7 @@ class BalitaModel {
     data['jenis_kelamin'] = jenisKelamin;
     data['posyandu_id'] = posyanduId;
     data['Buku_KIA'] = bukuKIA;
+    data['sudah_imunisasi'] = sudahImunisasi;
     return data;
   }
 }

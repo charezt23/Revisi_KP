@@ -295,8 +295,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: Colors.deepPurple,
                       borderRadius: 10,
                     ),
-                    if (_isLoading)
-                      const LoadingIndicator(),
+                    if (_isLoading) const LoadingIndicator(),
                     const SizedBox(height: 24),
 
                     // Link ke Login

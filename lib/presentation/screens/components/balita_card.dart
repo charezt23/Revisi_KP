@@ -54,7 +54,9 @@ class BalitaCard extends StatelessWidget {
             Text('NIK: ${balita.nik}'),
             Text(
               isDeceased
-                  ? 'Meninggal: ${DateFormat('dd MMMM yyyy').format(balita.tanggalKematian!)}'
+                  ? (balita.tanggalKematian != null
+                      ? 'Meninggal: ${DateFormat('dd MMMM yyyy').format(balita.tanggalKematian!)}'
+                      : 'Meninggal: Tanggal tidak tersedia')
                   : 'Ibu: ${balita.namaIbu} | Usia: $age tahun',
             ),
           ],

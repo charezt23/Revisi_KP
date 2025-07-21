@@ -3,6 +3,7 @@ import 'package:flutter_application_1/data/API/authservice.dart';
 import 'package:flutter_application_1/presentation/screens/Pemeriksaan/From_posyandu.dart';
 import 'package:flutter_application_1/presentation/screens/Daftar_Balita.dart';
 import 'package:flutter_application_1/presentation/screens/login_screen.dart';
+import 'package:flutter_application_1/presentation/screens/main_menu_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
 import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
@@ -23,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final Posyanduservice _posyanduService = Posyanduservice();
   List<PosyanduModel> _posyanduList = [];
   bool _isLoading = true;
-  
 
   @override
   void initState() {
@@ -40,8 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final fetchedList = await _posyanduService.GetPosyanduByUser();
       if (mounted) {
         setState(() {
-          // Gunakan ?? [] untuk memastikan list tidak pernah null
-          _posyanduList = fetchedList ?? [];
+          _posyanduList = fetchedList;
         });
       }
     } catch (e) {
@@ -183,10 +182,27 @@ class _HomeScreenState extends State<HomeScreen> {
   // Widget AppBar
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      title: const Text('Manajer Posyandu'),
+      title: const Text('Daftar Posyandu'),
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.black),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+        tooltip: 'Kembali',
+      ),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.apps, color: Color(0xFF03A9F4)),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MainMenuScreen()),
+            );
+          },
+          tooltip: 'Menu Aplikasi',
+        ),
         IconButton(
           icon: const Icon(Icons.logout),
           onPressed: _showLogoutDialog,
@@ -278,29 +294,199 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Widget List Posyandu
   Widget _buildPosyanduList() {
-    return RefreshIndicator(
-      onRefresh: _fetchPosyanduData,
-      child: ListView.builder(
-        itemCount: _posyanduList.length,
-        itemBuilder: (context, index) {
-          final posyandu = _posyanduList[index];
-          return _buildPosyanduCard(posyandu);
-        },
+    return Column(
+      children: [
+        // Card Menu di bagian atas
+        _buildMenuCard(),
+        // List posyandu
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _fetchPosyanduData,
+            child: ListView.builder(
+              itemCount: _posyanduList.length,
+              itemBuilder: (context, index) {
+                final posyandu = _posyanduList[index];
+                return _buildPosyanduCard(posyandu);
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget Card Menu
+  Widget _buildMenuCard() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      child: Card(
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF03A9F4), Color(0xFF29B6F6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.apps,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Menu Aplikasi',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Akses semua fitur aplikasi dengan mudah',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MainMenuScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.arrow_forward,
+                        color: Color(0xFF03A9F4),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   // Widget Empty State
   Widget _buildEmptyState() {
-    return const Center(
-      child: Text(
-        'Belum ada data Posyandu. Tekan + untuk membuat.',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.black87,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            margin: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.local_hospital,
+                  size: 64,
+                  color: Color(0xFF03A9F4),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Belum ada Posyandu',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Tambah posyandu pertama Anda untuk memulai mengelola data balita.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black54, fontSize: 14),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const KohortFormScreen(),
+                          ),
+                        ).then((_) => _fetchPosyanduData());
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Tambah'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF03A9F4),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MainMenuScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.apps),
+                      label: const Text('Menu'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

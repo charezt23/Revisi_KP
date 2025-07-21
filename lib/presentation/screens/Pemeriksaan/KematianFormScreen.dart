@@ -43,7 +43,7 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
         'dd MMMM yyyy',
         'id_ID',
       ).format(data.tanggalKematian);
-      _penyebabController.text = data.penyebab ?? '';
+      _penyebabController.text = data.penyebabKematian;
     }
   }
 
@@ -74,6 +74,17 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
 
   Future<void> _simpanPencatatan() async {
     if (!_formKey.currentState!.validate() || _isSaving) {
+      return;
+    }
+
+    // Cek id balita null
+    if (widget.balita.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ID balita tidak boleh null!'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -140,9 +151,16 @@ class _KematianFormScreenState extends State<KematianFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditMode ? 'Edit Data Kematian' : 'Form Kematian'),
+        title: Text(
+          _isEditMode ? 'Edit Data Kematian' : 'Form Kematian',
+          style: const TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       extendBodyBehindAppBar: true,
       body: Stack(

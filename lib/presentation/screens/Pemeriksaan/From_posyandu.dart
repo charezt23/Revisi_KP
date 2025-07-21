@@ -74,9 +74,16 @@ class _KohortFormScreenState extends State<KohortFormScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Buat Posyandu Baru'),
+        title: const Text(
+          'Buat Posyandu Baru',
+          style: TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Stack(
         children: [

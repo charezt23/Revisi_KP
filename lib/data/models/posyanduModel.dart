@@ -32,6 +32,8 @@ class PosyanduModel {
               : null,
       balitaCount = json['balita_count'];
 
+  get alamat => null;
+
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/presentation/screens/Home_Screen.dart';
-import 'package:flutter_application_1/presentation/screens/login_screen.dart';
-import 'package:flutter_application_1/data/API/authservice.dart';
+import 'package:flutter_application_1/presentation/screens/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
@@ -25,38 +23,33 @@ class MyApp extends StatelessWidget {
         Locale('id', 'ID'), // Bahasa Indonesia
         // ...tambahkan locale lain jika perlu
       ],
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const AuthWrapper(),
-    );
-  }
-}
-
-class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({super.key});
-
-  @override
-  State<AuthWrapper> createState() => _AuthWrapperState();
-}
-
-class _AuthWrapperState extends State<AuthWrapper> {
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: AuthService.isLoggedIn(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          // Tampilkan loading screen
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (snapshot.data == false || snapshot.data == null) {
-          return const LoginScreen();
-        } else {
-          return const HomeScreen();
-        }
-      },
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        primaryColor: const Color(0xFF03A9F4),
+        scaffoldBackgroundColor: Colors.grey[50],
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF03A9F4),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF03A9F4),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        cardTheme: const CardThemeData(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+        ),
+      ),
+      home: const SplashScreen(),
     );
   }
 }

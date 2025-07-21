@@ -158,7 +158,16 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.balita == null ? 'Tambah Balita' : 'Edit Balita'),
+        title: Text(
+          widget.balita == null ? 'Tambah Balita' : 'Edit Balita',
+          style: const TextStyle(color: Colors.black),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Stack(
         children: [
@@ -247,8 +256,7 @@ class _BalitaFormScreenState extends State<BalitaFormScreen> {
                     color: Colors.blue,
                     borderRadius: 8.0,
                   ),
-                  if (_isLoading)
-                    const LoadingIndicator(),
+                  if (_isLoading) const LoadingIndicator(),
                 ],
               ),
             ),

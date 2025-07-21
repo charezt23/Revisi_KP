@@ -8,9 +8,7 @@ import 'package:flutter_application_1/presentation/screens/Balita_Form_Screen.da
 import 'package:flutter_application_1/presentation/screens/balita_detail_screen.dart';
 import 'package:flutter_application_1/presentation/screens/components/balita_card.dart';
 import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
-import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
-import 'package:flutter_application_1/presentation/screens/components/section_container.dart';
-import 'package:flutter_application_1/presentation/screens/components/status_container.dart';
+// import 'package:flutter_application_1/presentation/screens/components/status_container.dart';
 
 // Tambahkan RouteObserver global
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
@@ -26,16 +24,289 @@ class KohortDetailScreen extends StatefulWidget {
 
 class _KohortDetailScreenState extends State<KohortDetailScreen>
     with RouteAware {
+  // Widget untuk sidebar filter (mirip AllBalitaScreen, warna dan icon disesuaikan)
+  Widget _buildFilterSidebar() {
+    return Drawer(
+      width: 300,
+      child: Column(
+        children: [
+          // Header sidebar
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(24, 50, 24, 20),
+            decoration: const BoxDecoration(
+              color: Color(0xFF00897B), // teal
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.tune, // beda icon
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Filter Data Balita',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Pilih status untuk memfilter data balita',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          // Filter options
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  'Status Balita',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildFilterOption(
+                  'semua',
+                  'Semua Balita',
+                  Icons.list,
+                  Colors.grey,
+                ),
+                _buildFilterOption(
+                  'aktif',
+                  'Balita Aktif',
+                  Icons.check_circle,
+                  Colors.teal,
+                ),
+                _buildFilterOption(
+                  'tidak_aktif',
+                  'Balita Tidak Aktif',
+                  Icons.pause_circle,
+                  Colors.orange,
+                ),
+                _buildFilterOption(
+                  'meninggal',
+                  'Balita Meninggal',
+                  Icons.cancel,
+                  Colors.purple,
+                ),
+                const SizedBox(height: 24),
+                // Statistik bayi
+                FutureBuilder<List<BalitaModel>>(
+                  future: _balitaList,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData || snapshot.data == null) {
+                      return const SizedBox.shrink();
+                    }
+                    final allBalita = snapshot.data!;
+                    int aktif = 0;
+                    int tidakAktif = 0;
+                    int meninggal = _idBalitaMeninggal.length;
+                    for (var balita in allBalita) {
+                      if (balita.id == null) continue;
+                      bool isDead = _idBalitaMeninggal.contains(balita.id);
+                      if (!isDead) {
+                        int age = _calculateAge(balita.tanggalLahir);
+                        if (age < 6) {
+                          aktif++;
+                        } else {
+                          tidakAktif++;
+                        }
+                      }
+                    }
+                    return Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.teal.withOpacity(0.07),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Statistik Balita',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.teal,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: const BoxDecoration(
+                                  color: Colors.teal,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Aktif',
+                                style: TextStyle(fontSize: 13),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '$aktif',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.teal,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: const BoxDecoration(
+                                  color: Colors.orange,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Tidak Aktif',
+                                style: TextStyle(fontSize: 13),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '$tidakAktif',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: const BoxDecoration(
+                                  color: Colors.purple,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Meninggal',
+                                style: TextStyle(fontSize: 13),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '$meninggal',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purple,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      // floatingActionButton dipindah ke Scaffold
+    );
+  }
+
+  Widget _buildFilterOption(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
+    final bool isSelected = _statusFilter == value;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? color.withOpacity(0.1) : null,
+        border: Border.all(
+          color: isSelected ? color : Colors.grey.shade300,
+          width: isSelected ? 2 : 1,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: isSelected ? color : Colors.grey),
+        title: Text(
+          label,
+          style: TextStyle(
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? color : Colors.grey[700],
+          ),
+        ),
+        trailing: isSelected ? Icon(Icons.check, color: color) : null,
+        onTap: () {
+          Navigator.of(context).pop();
+          Future.delayed(const Duration(milliseconds: 150), () {
+            if (mounted) {
+              setState(() {
+                _statusFilter = value;
+              });
+            }
+          });
+        },
+      ),
+    );
+  }
+
+  // Widget untuk statistik filter
+
+  // Widget untuk baris statistik
+
   late Future<List<BalitaModel>> _balitaList;
   final Balitaservice _balitaService = Balitaservice();
   final KematianService _kematianService = KematianService();
   final TextEditingController _searchController = TextEditingController();
-  bool _showHistoryMode = false; // false = aktif (< 6 tahun), true = semua data
   String _searchQuery = '';
 
   // Tambahan: daftar id balita yang sudah meninggal (patch frontend)
   List<int> _idBalitaMeninggal = [];
-  bool _isLoadingKematian = false;
+  // bool _isLoadingKematian = false; // removed unused variable
 
   // Filter status
   String _statusFilter =
@@ -111,8 +382,11 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
   List<BalitaModel> _filterBalita(List<BalitaModel> allBalita) {
     List<BalitaModel> filtered = allBalita;
 
-    // Filter berdasarkan mode tampilan (aktif atau riwayat)
-    if (!_showHistoryMode) {
+    // Filter berdasarkan status tanpa mode aktif/riwayat
+    if (_statusFilter == 'semua') {
+      // Semua balita
+      // Tidak filter tambahan
+    } else if (_statusFilter == 'aktif') {
       filtered =
           filtered
               .where(
@@ -121,29 +395,20 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
                     !_idBalitaMeninggal.contains(balita.id),
               )
               .toList();
-    } else {
-      // Filter status di mode riwayat
-      if (_statusFilter == 'aktif') {
-        filtered =
-            filtered
-                .where(
-                  (balita) =>
-                      _calculateAge(balita.tanggalLahir) < 6 &&
-                      !_idBalitaMeninggal.contains(balita.id),
-                )
-                .toList();
-      } else if (_statusFilter == 'tidak_aktif' ||
-          _statusFilter == 'meninggal') {
-        // Keduanya menampilkan balita yang sudah meninggal atau usia >= 6 tahun
-        filtered =
-            filtered
-                .where(
-                  (balita) =>
-                      _idBalitaMeninggal.contains(balita.id) ||
-                      _calculateAge(balita.tanggalLahir) >= 6,
-                )
-                .toList();
-      }
+    } else if (_statusFilter == 'tidak_aktif') {
+      filtered =
+          filtered
+              .where(
+                (balita) =>
+                    _calculateAge(balita.tanggalLahir) >= 6 &&
+                    !_idBalitaMeninggal.contains(balita.id),
+              )
+              .toList();
+    } else if (_statusFilter == 'meninggal') {
+      filtered =
+          filtered
+              .where((balita) => _idBalitaMeninggal.contains(balita.id))
+              .toList();
     }
 
     // Filter berdasarkan pencarian
@@ -238,198 +503,272 @@ class _KohortDetailScreenState extends State<KohortDetailScreen>
       appBar: AppBar(
         title: Row(
           children: [
-            Expanded(child: Text(widget.posyandu.namaPosyandu)),
-            const SizedBox(width: 8),
-            StatusContainer(showHistoryMode: _showHistoryMode),
+            Expanded(
+              child: Text(
+                widget.posyandu.namaPosyandu,
+                style: const TextStyle(
+                  color: Color(0xFF00897B),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
           ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          // Tombol untuk toggle mode tampilan (aktif/riwayat)
-          IconButton(
-            icon: Icon(
-              _showHistoryMode ? Icons.history : Icons.people,
-              color: _showHistoryMode ? Colors.orange : Colors.blue,
+        backgroundColor: Colors.white,
+        elevation: 2,
+        leading: Container(
+          margin: const EdgeInsets.only(left: 8),
+          decoration: BoxDecoration(
+            color: Colors.teal.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: Color(0xFF00897B),
+              size: 20,
             ),
-            onPressed: () {
-              setState(() {
-                _showHistoryMode = !_showHistoryMode;
-                _statusFilter = 'semua'; // Reset filter saat mode berubah
-              });
-            },
-            tooltip:
-                _showHistoryMode ? 'Tampilkan Data Aktif' : 'Tampilkan Riwayat',
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        actions: [
+          Builder(
+            builder:
+                (context) => Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.tune, color: Color(0xFF00897B)),
+                    onPressed: () => Scaffold.of(context).openEndDrawer(),
+                    tooltip: 'Filter Data',
+                  ),
+                ),
           ),
         ],
       ),
-      extendBodyBehindAppBar: true,
-      body: Stack(
+      endDrawer: _buildFilterSidebar(),
+      extendBodyBehindAppBar: false,
+      backgroundColor: const Color(0xFFF6F8FA),
+      body: Column(
         children: [
-          const LoginBackground(),
-          Column(
-            children: [
-              SizedBox(
-                height: kToolbarHeight + 32,
-              ), // Tambahkan jarak agar search bar tidak menabrak AppBar
-              // Status indicator (dihilangkan sesuai permintaan)
-              // const SizedBox(height: 8),
-              // Search Bar
-              SectionContainer(
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText:
-                        'Cari berdasarkan nama balita, NIK, nama ibu, atau alamat...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon:
-                        _searchQuery.isNotEmpty
-                            ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() {
-                                  _searchQuery = '';
-                                });
-                              },
-                            )
-                            : null,
+          // Gradient header background
+          Container(
+            width: double.infinity,
+            height: 110,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF00897B), Color(0xFF26A69A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+            ),
+            child: const SizedBox(),
+          ),
+          // Search Bar
+          Transform.translate(
+            offset: const Offset(0, -40),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Material(
+                elevation: 3,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText:
+                          'Cari berdasarkan nama balita, NIK, nama ibu, atau alamat...',
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: Color(0xFF00897B),
+                      ),
+                      suffixIcon:
+                          _searchQuery.isNotEmpty
+                              ? IconButton(
+                                icon: const Icon(
+                                  Icons.clear,
+                                  color: Colors.redAccent,
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {
+                                    _searchQuery = '';
+                                  });
+                                },
+                              )
+                              : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    style: const TextStyle(fontSize: 16),
                   ),
                 ),
-              ), // penutup Container search bar
-              const SizedBox(height: 8),
-              // Data List
-              if (_showHistoryMode)
-                Padding(
+              ),
+            ),
+          ),
+          // Info jumlah data dan filter
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: FutureBuilder<List<BalitaModel>>(
+              future: _balitaList,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data == null) {
+                  return const SizedBox.shrink();
+                }
+                final allBalita = snapshot.data!;
+                final filteredBalita = _filterBalita(allBalita);
+                return Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
+                    horizontal: 18,
+                    vertical: 12,
                   ),
-                  child: Row(
-                    children: [
-                      const Text('Filter status: '),
-                      DropdownButton<String>(
-                        value: _statusFilter,
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'semua',
-                            child: Text('Semua'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'aktif',
-                            child: Text('Aktif'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'tidak_aktif',
-                            child: Text('Tidak Aktif'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'meninggal',
-                            child: Text('Meninggal'),
-                          ),
-                        ],
-                        onChanged: (val) {
-                          setState(() {
-                            _statusFilter = val!;
-                          });
-                        },
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.teal.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                ),
-              Expanded(
-                child: FutureBuilder<List<BalitaModel>>(
-                  future: _balitaList,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: LoadingIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Text('Gagal memuat data: \\${snapshot.error}'),
-                      );
-                    }
-                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Center(
-                        child: Text('Belum ada data balita.'),
-                      );
-                    }
-
-                    final allBalita = snapshot.data!;
-                    final filteredBalita = _filterBalita(allBalita);
-
-                    if (filteredBalita.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.search_off,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'Tidak ada data yang sesuai dengan pencarian'
-                                  : _showHistoryMode
-                                  ? 'Belum ada data riwayat'
-                                  : 'Belum ada data balita aktif',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.teal.shade700),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Menampilkan ${filteredBalita.length} dari ${allBalita.length} balita',
+                          style: const TextStyle(
+                            color: Color(0xFF00897B),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
                         ),
-                      );
-                    }
-
-                    return RefreshIndicator(
-                      onRefresh: () async => _refreshAllData(),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.only(
-                          left: 8,
-                          right: 8,
-                          bottom: 80,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          // Filter status hanya melalui sidebar, Dropdown di body dihapus
+          Expanded(
+            child: FutureBuilder<List<BalitaModel>>(
+              future: _balitaList,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: LoadingIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Gagal memuat data: \\${snapshot.error}'),
+                  );
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.sentiment_dissatisfied,
+                          size: 70,
+                          color: Colors.teal.shade200,
                         ),
-                        itemCount: filteredBalita.length,
-                        itemBuilder: (context, index) {
-                          return _buildBalitaListItem(filteredBalita[index]);
-                        },
-                      ), // penutup ListView.builder
-                    ); // penutup RefreshIndicator
-                  },
-                ), // penutup FutureBuilder
-              ), // penutup Expanded
-            ],
+                        const SizedBox(height: 18),
+                        Text(
+                          'Belum ada data balita',
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: Colors.teal.shade400,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                final allBalita = snapshot.data!;
+                final filteredBalita = _filterBalita(allBalita);
+                if (filteredBalita.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.sentiment_dissatisfied,
+                          size: 70,
+                          color: Colors.teal.shade200,
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          _searchQuery.isNotEmpty
+                              ? 'Tidak ada data yang sesuai dengan pencarian'
+                              : 'Belum ada data balita',
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: Colors.teal.shade400,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () async => _refreshAllData(),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(
+                      left: 8,
+                      right: 8,
+                      bottom: 80,
+                    ),
+                    itemCount: filteredBalita.length,
+                    itemBuilder: (context, index) {
+                      return _buildBalitaListItem(filteredBalita[index]);
+                    },
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
-      floatingActionButton:
-          !_showHistoryMode // hanya tampil di mode aktif
-              ? FloatingActionButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => BalitaFormScreen(
-                            posyanduId: widget.posyandu.id!,
-                            // balita: null, // opsional, jika parameter balita wajib
-                          ),
-                    ),
-                  ).then((_) => _refreshAllData());
-                },
-                tooltip: 'Tambah Balita',
-                child: const Icon(Icons.person_add),
-              )
-              : null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BalitaFormScreen(posyanduId: widget.posyandu.id!),
+            ),
+          ).then((_) => _refreshAllData());
+        },
+        tooltip: 'Tambah Balita',
+        backgroundColor: const Color(0xFF00897B),
+        child: const Icon(Icons.person_add, color: Colors.white),
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
     );
   }
 }

@@ -124,9 +124,16 @@ class _KunjunganFormScreenState extends State<KunjunganFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Form Kunjungan Balita'),
+        title: const Text(
+          'Form Kunjungan Balita',
+          style: TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       extendBodyBehindAppBar: true,
       body: Stack(

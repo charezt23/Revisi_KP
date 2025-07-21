@@ -150,9 +150,16 @@ class _ImunisasiFormScreenState extends State<ImunisasiFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Imunisasi' : 'Form Imunisasi'),
+        title: Text(
+          _isEditing ? 'Edit Imunisasi' : 'Form Imunisasi',
+          style: const TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       extendBodyBehindAppBar: true,
       body: Stack(

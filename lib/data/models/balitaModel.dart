@@ -11,7 +11,8 @@ class BalitaModel {
   int posyanduId;
   String bukuKIA;
   PosyanduModel? posyandu;
-  final DateTime? tanggalKematian; // <-- TAMBAHKAN BARIS INI
+  final DateTime? tanggalKematian;
+  int? userId;
 
   BalitaModel({
     this.id,
@@ -25,6 +26,7 @@ class BalitaModel {
     required this.bukuKIA,
     this.posyandu,
     this.tanggalKematian, // <-- TAMBAHKAN INI DI CONSTRUCTOR
+    this.userId,
   });
 
   factory BalitaModel.fromJson(Map<String, dynamic> json) {
@@ -42,16 +44,18 @@ class BalitaModel {
           json['posyandu'] != null
               ? PosyanduModel.fromJson(json['posyandu'])
               : null,
-      // <-- TAMBAHKAN LOGIKA INI UNTUK MEMBACA DARI JSON -->
       tanggalKematian:
           json['tanggal_kematian'] != null
               ? DateTime.parse(json['tanggal_kematian'])
               : null,
+      userId: json['user_id'],
     );
   }
 
+  // Getter contoh, silakan sesuaikan logika sesuai kebutuhan
+  bool get sudahImunisasi => false;
+
   Map<String, dynamic> toJson() {
-    // ... (Fungsi toJson Anda)
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['nama'] = nama;
@@ -62,6 +66,12 @@ class BalitaModel {
     data['jenis_kelamin'] = jenisKelamin;
     data['posyandu_id'] = posyanduId;
     data['Buku_KIA'] = bukuKIA;
+    if (tanggalKematian != null) {
+      data['tanggal_kematian'] = tanggalKematian!.toIso8601String();
+    }
+    if (userId != null) {
+      data['user_id'] = userId;
+    }
     return data;
   }
 }

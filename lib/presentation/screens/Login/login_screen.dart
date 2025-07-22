@@ -3,8 +3,7 @@ import 'package:flutter_application_1/presentation/screens/Login/register_screen
 import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_application_1/data/API/authservice.dart';
-import '../Home_Screen.dart'
-    hide LoginBackground; // <-- Import HomeScreen untuk navigasi
+import 'package:flutter_application_1/presentation/screens/Home_Screen.dart';
 import 'package:flutter_application_1/presentation/screens/components/custom_button.dart';
 import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
 
@@ -208,8 +207,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // Widget untuk loading indicator
-  Widget _buildLoadingWidget() {
-    return const LoadingIndicator();
+  Widget _buildLoadingIndicator() {
+    return _isLoading
+        ? const Center(child: LoadingIndicator())
+        : const SizedBox.shrink();
   }
 
   @override

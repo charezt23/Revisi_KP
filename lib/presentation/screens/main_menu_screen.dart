@@ -12,7 +12,7 @@ class MainMenuScreen extends StatefulWidget {
 }
 
 class _MainMenuScreenState extends State<MainMenuScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
@@ -21,6 +21,8 @@ class _MainMenuScreenState extends State<MainMenuScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkAuthentication();
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -46,11 +48,78 @@ class _MainMenuScreenState extends State<MainMenuScreen>
     _slideController.forward();
   }
 
+  // Method untuk mengecek status authentication
+  Future<void> _checkAuthentication() async {
+    try {
+      final user = await AuthService.getCurrentUser();
+      if (user == null) {
+        // Jika tidak ada user yang login, redirect ke LoginScreen
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              PageRouteBuilder(
+                pageBuilder:
+                    (context, animation, secondaryAnimation) =>
+                        const LoginScreen(),
+                transitionsBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                ) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                transitionDuration: const Duration(milliseconds: 500),
+              ),
+              (route) => false,
+            );
+          }
+        });
+      }
+    } catch (e) {
+      // Jika terjadi error saat mengecek user, redirect ke LoginScreen
+      print('Error checking authentication: $e');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            PageRouteBuilder(
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const LoginScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 500),
+            ),
+            (route) => false,
+          );
+        }
+      });
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _fadeController.dispose();
     _slideController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Cek authentication ketika app kembali aktif
+      _checkAuthentication();
+    }
   }
 
   @override
@@ -71,70 +140,57 @@ class _MainMenuScreenState extends State<MainMenuScreen>
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Custom AppBar with gradient
-              _buildCustomAppBar(context),
-              // Main content with animation
-              Expanded(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: Container(
-                      margin: const EdgeInsets.only(top: 20),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.white,
-                            Colors.grey.shade50,
-                            Colors.white,
-                          ],
-                          stops: const [0.0, 0.5, 1.0],
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(35),
-                          topRight: Radius.circular(35),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            spreadRadius: 0,
-                            blurRadius: 20,
-                            offset: const Offset(0, -5),
-                          ),
-                          BoxShadow(
-                            color: const Color(0xFF01579B).withOpacity(0.1),
-                            spreadRadius: 0,
-                            blurRadius: 15,
-                            offset: const Offset(0, -2),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(35),
-                          topRight: Radius.circular(35),
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              top: BorderSide(
-                                color: Colors.white.withOpacity(0.8),
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                          child: const MenuPage(),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Container(
+                margin: const EdgeInsets.only(top: 0),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.white, Colors.grey.shade50, Colors.white],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(35),
+                    topRight: Radius.circular(35),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      spreadRadius: 0,
+                      blurRadius: 20,
+                      offset: const Offset(0, -5),
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFF01579B).withOpacity(0.1),
+                      spreadRadius: 0,
+                      blurRadius: 15,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(35),
+                    topRight: Radius.circular(35),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: Colors.white.withOpacity(0.8),
+                          width: 2,
                         ),
                       ),
                     ),
+                    child: const MenuPage(),
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -667,6 +723,9 @@ class _MainMenuScreenState extends State<MainMenuScreen>
               ),
             ),
       );
+    } else {
+      // Jika user null, redirect ke login
+      _checkAuthentication();
     }
   }
 
@@ -860,11 +919,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.logout,
-                            color: Colors.orange,
-                            size: 44,
-                          ),
+                          // Icon logout dihilangkan sesuai permintaan, fungsi tetap berjalan
                         ),
                         const SizedBox(height: 16),
                         const Text(
@@ -955,7 +1010,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                                     ),
                               );
 
-                              await AuthService.logout();
+                              await AuthService.forceLogout();
 
                               if (context.mounted) {
                                 Navigator.pushAndRemoveUntil(

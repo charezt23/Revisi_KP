@@ -14,7 +14,7 @@ class Posyanduservice {
 
       final response = await http.post(
         Uri.parse('$base_url/posyandu'),
-        headers: {'Content-Type': 'application/json'},
+        headers: await AuthService.getAuthHeaders(),
         body: json.encode({
           'nama_posyandu': namaPosyandu,
           'nama_desa': namaDesa,
@@ -43,6 +43,7 @@ class Posyanduservice {
       }
       final response = await http.get(
         Uri.parse(base_url + '/posyandu/user/${userId}'),
+        headers: await AuthService.getAuthHeaders(),
       );
 
       if (response.statusCode == 200) {
@@ -69,16 +70,15 @@ class Posyanduservice {
 
   UpdatePosyandu(int id, String namaPosyandu, String namaDesa) async {
     try {
-      var request = http.Request(
-        'PUT',
+      final response = await http.put(
         Uri.parse(base_url + '/posyandu/${id}'),
+        headers: await AuthService.getAuthHeaders(),
+        body: json.encode({
+          'nama_posyandu': namaPosyandu,
+          'nama_desa': namaDesa,
+        }),
       );
-      request.body = json.encode({
-        'nama_posyandu': namaPosyandu,
-        'nama_desa': namaDesa,
-      });
-      request.headers.addAll({'Content-Type': 'application/json'});
-      http.StreamedResponse response = await request.send();
+
       if (response.statusCode == 200) {
         print('Response status: ${response.statusCode}');
         return true;
@@ -88,18 +88,19 @@ class Posyanduservice {
       }
     } catch (e) {
       print(e);
+      return false;
     }
   }
 
   DeletePosyandu(id) async {
     try {
-      var request = http.Request(
-        'DELETE',
+      final response = await http.delete(
         Uri.parse(base_url + '/posyandu/${id}'),
+        headers: await AuthService.getAuthHeaders(),
       );
-      print("Request URL: ${request.url}");
 
-      http.StreamedResponse response = await request.send();
+      print("Request URL: ${base_url}/posyandu/${id}");
+
       if (response.statusCode == 200) {
         print('Response status: ${response.statusCode}');
         return true;
@@ -109,6 +110,7 @@ class Posyanduservice {
       }
     } catch (e) {
       print(e);
+      return false;
     }
   }
 }

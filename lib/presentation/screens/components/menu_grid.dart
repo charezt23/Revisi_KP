@@ -4,6 +4,7 @@ import 'package:flutter_application_1/presentation/screens/Pemeriksaan/Kunjungan
 import 'package:flutter_application_1/presentation/screens/Daftar_Balita.dart';
 import 'package:flutter_application_1/presentation/screens/Home_Screen.dart';
 import 'package:flutter_application_1/presentation/screens/all_balita_screen.dart';
+import 'package:flutter_application_1/presentation/screens/Login/login_screen.dart';
 import 'package:flutter_application_1/data/models/posyanduModel.dart';
 import 'package:flutter_application_1/data/API/PosyanduService.dart';
 import 'package:flutter_application_1/data/API/authservice.dart';
@@ -25,6 +26,7 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _checkAuthentication();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -32,7 +34,6 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _loadData();
   }
 
   @override
@@ -63,6 +64,66 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
           ),
         );
       }
+    }
+  }
+
+  // Method untuk mengecek status authentication
+  Future<void> _checkAuthentication() async {
+    try {
+      final user = await AuthService.getCurrentUser();
+      if (user == null) {
+        // Jika tidak ada user yang login, redirect ke LoginScreen
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              PageRouteBuilder(
+                pageBuilder:
+                    (context, animation, secondaryAnimation) =>
+                        const LoginScreen(),
+                transitionsBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                ) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                transitionDuration: const Duration(milliseconds: 500),
+              ),
+              (route) => false,
+            );
+          }
+        });
+        return;
+      }
+      // Jika user valid, lanjutkan load data
+      _loadData();
+    } catch (e) {
+      // Jika terjadi error saat mengecek user, redirect ke LoginScreen
+      print('Error checking authentication: $e');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            PageRouteBuilder(
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const LoginScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 500),
+            ),
+            (route) => false,
+          );
+        }
+      });
     }
   }
 
@@ -155,21 +216,180 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
               ),
               if (_posyanduList.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    '${_posyanduList.length} Posyandu',
-                    style: TextStyle(
-                      color: Color(0xFF03A9F4),
-                      fontSize: MediaQuery.of(context).size.width * 0.025,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: const EdgeInsets.only(left: 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        '${_posyanduList.length} Posyandu',
+                        style: TextStyle(
+                          color: const Color(0xFF03A9F4),
+                          fontSize: MediaQuery.of(context).size.width * 0.025,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      PopupMenuButton<String>(
+                        icon: Icon(Icons.more_vert, color: const Color(0xFF03A9F4), size: 22),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        color: Colors.white,
+                        elevation: 4,
+                        onSelected: (value) async {
+                          switch (value) {
+                            case 'home':
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                              );
+                              break;
+                            case 'profile':
+                              final user = await AuthService.getCurrentUser();
+                              if (user != null) {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  barrierColor: Colors.black.withOpacity(0.6),
+                                  builder: (context) => Dialog(
+                                    backgroundColor: Colors.transparent,
+                                    elevation: 0,
+                                    child: Container(
+                                      constraints: const BoxConstraints(maxWidth: 420),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(28),
+                                        color: Colors.white,
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(24),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.person, size: 48, color: Color(0xFF03A9F4)),
+                                            const SizedBox(height: 16),
+                                            Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                                            const SizedBox(height: 8),
+                                            Text(user.email, style: const TextStyle(fontSize: 16)),
+                                            const SizedBox(height: 24),
+                                            ElevatedButton(
+                                              onPressed: () => Navigator.pop(context),
+                                              child: const Text('Tutup'),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                              break;
+                            case 'logout':
+                              showDialog(
+                                context: context,
+                                barrierDismissible: true,
+                                barrierColor: Colors.black.withOpacity(0.6),
+                                builder: (context) => Dialog(
+                                  backgroundColor: Colors.transparent,
+                                  elevation: 0,
+                                  child: Container(
+                                    constraints: const BoxConstraints(maxWidth: 400),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(28),
+                                      color: Colors.white,
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(24),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.logout, size: 44, color: Colors.red),
+                                          const SizedBox(height: 16),
+                                          const Text('Konfirmasi Keluar', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                          const SizedBox(height: 8),
+                                          const Text('Apakah Anda yakin ingin keluar dari aplikasi?', textAlign: TextAlign.center),
+                                          const SizedBox(height: 24),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: OutlinedButton(
+                                                  onPressed: () => Navigator.pop(context),
+                                                  child: const Text('Batal'),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              Expanded(
+                                                child: ElevatedButton(
+                                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                                  onPressed: () async {
+                                                    Navigator.pop(context);
+                                                    await AuthService.forceLogout();
+                                                    if (context.mounted) {
+                                                      Navigator.pushAndRemoveUntil(
+                                                        context,
+                                                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                                        (route) => false,
+                                                      );
+                                                    }
+                                                  },
+                                                  child: const Text('Keluar'),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                              break;
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem<String>(
+                            value: 'home',
+                            child: Row(
+                              children: [
+                                Icon(Icons.list_alt, color: Color(0xFF03A9F4)),
+                                const SizedBox(width: 8),
+                                const Text('Daftar Posyandu'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'profile',
+                            child: Row(
+                              children: [
+                                Icon(Icons.person, color: Color(0xFF4CAF50)),
+                                const SizedBox(width: 8),
+                                const Text('Profil'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'logout',
+                            child: Row(
+                              children: [
+                                Icon(Icons.logout, color: Colors.red),
+                                const SizedBox(width: 8),
+                                const Text('Keluar'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
             ],
@@ -253,6 +473,8 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
+              const SizedBox(height: 10),
             ],
           ),
         ),
@@ -594,5 +816,242 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
         );
         break;
     }
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.6),
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 400),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white,
+                    Colors.orange.shade50.withOpacity(0.8),
+                    Colors.white,
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    spreadRadius: 0,
+                    blurRadius: 25,
+                    offset: const Offset(0, 10),
+                  ),
+                  BoxShadow(
+                    color: Colors.orange.withOpacity(0.1),
+                    spreadRadius: 0,
+                    blurRadius: 40,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header section
+                  Container(
+                    padding: const EdgeInsets.all(28),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.orange.withOpacity(0.15),
+                                Colors.orange.withOpacity(0.25),
+                                Colors.orange.withOpacity(0.1),
+                              ],
+                              stops: const [0.0, 0.5, 1.0],
+                            ),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.orange.withOpacity(0.4),
+                              width: 2.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.orange.withOpacity(0.2),
+                                spreadRadius: 0,
+                                blurRadius: 12,
+                                offset: const Offset(0, 3),
+                              ),
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.5),
+                                spreadRadius: 0,
+                                blurRadius: 8,
+                                offset: const Offset(0, -2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.logout,
+                            color: Colors.orange,
+                            size: 44,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Konfirmasi Keluar',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Apakah Anda yakin ingin keluar dari aplikasi?',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade700,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Action buttons
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.grey.shade700,
+                              side: BorderSide(color: Colors.grey.shade300),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Batal',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              Navigator.pop(context);
+                              // Show loading indicator
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder:
+                                    (context) => Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(24),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        child: const Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            CircularProgressIndicator(
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    Color(0xFF03A9F4),
+                                                  ),
+                                            ),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              'Keluar...',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                              );
+
+                              await AuthService.forceLogout();
+
+                              if (context.mounted) {
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                        ) => const LoginScreen(),
+                                    transitionsBuilder: (
+                                      context,
+                                      animation,
+                                      secondaryAnimation,
+                                      child,
+                                    ) {
+                                      return FadeTransition(
+                                        opacity: animation,
+                                        child: child,
+                                      );
+                                    },
+                                    transitionDuration: const Duration(
+                                      milliseconds: 500,
+                                    ),
+                                  ),
+                                  (route) => false,
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 4,
+                            ),
+                            child: const Text(
+                              'Keluar',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
   }
 }

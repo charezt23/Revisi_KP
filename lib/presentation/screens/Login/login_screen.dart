@@ -3,9 +3,8 @@ import 'package:flutter_application_1/presentation/screens/Login/register_screen
 import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_application_1/data/API/authservice.dart';
-import 'package:flutter_application_1/presentation/screens/Home_Screen.dart';
+import 'package:flutter_application_1/presentation/screens/main_menu_screen.dart';
 import 'package:flutter_application_1/presentation/screens/components/custom_button.dart';
-import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,6 +22,46 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Delay untuk memastikan proses logout selesai
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _checkExistingAuth();
+    });
+  }
+
+  // Cek apakah user sudah login sebelumnya
+  void _checkExistingAuth() async {
+    try {
+      final user = await AuthService.getCurrentUser();
+      // Tambahkan pengecekan tambahan untuk memastikan user benar-benar valid
+      if (user != null && user.email.isNotEmpty && mounted) {
+        // Jika sudah login dan data valid, langsung ke MainMenuScreen
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder:
+                (context, animation, secondaryAnimation) =>
+                    const MainMenuScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      }
+    } catch (e) {
+      // Jika error, tetap di login screen
+      print('Error checking existing auth: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -58,9 +97,9 @@ class _LoginScreenState extends State<LoginScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        await Future.delayed(const Duration(seconds: 4));
+        await Future.delayed(const Duration(seconds: 2));
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const MainMenuScreen()),
         );
       } else {
         // Jika gagal, tampilkan pesan error
@@ -208,15 +247,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Widget untuk loading indicator
   Widget _buildLoadingIndicator() {
-    return _isLoading
-        ? const Center(child: LoadingIndicator())
-        : const SizedBox.shrink();
+    return Container(
+      color: Colors.black.withOpacity(0.5),
+      child: const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
+      // AppBar removed as per request
       body: Stack(
         children: [
           const LoginBackground(),
@@ -258,6 +303,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+          // Loading indicator overlay
+          if (_isLoading) _buildLoadingIndicator(),
         ],
       ),
     );

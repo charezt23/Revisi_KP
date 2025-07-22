@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/presentation/screens/Login/login_screen.dart';
-import 'package:flutter_application_1/presentation/screens/components/menu_grid.dart';
+import 'package:flutter_application_1/presentation/screens/main_menu_screen.dart';
 import 'package:flutter_application_1/data/API/authservice.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -68,14 +68,14 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _checkAuthAndNavigate() async {
     try {
-      final isLoggedIn = await AuthService.isLoggedIn();
+      final user = await AuthService.getCurrentUser();
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder:
                 (context, animation, secondaryAnimation) =>
-                    isLoggedIn ? const MenuPage() : const LoginScreen(),
+                    user != null ? const MainMenuScreen() : const LoginScreen(),
             transitionDuration: const Duration(milliseconds: 800),
             transitionsBuilder: (
               context,

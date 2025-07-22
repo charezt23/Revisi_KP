@@ -1,4 +1,5 @@
 import 'package:flutter_application_1/data/API/BaseURL.dart';
+import 'package:flutter_application_1/data/API/authservice.dart';
 import 'package:flutter_application_1/data/models/balitaModel.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -17,7 +18,7 @@ class Balitaservice {
     try {
       final response = await http.post(
         Uri.parse('$base_url/balita'),
-        headers: {'Content-Type': 'application/json'},
+        headers: await AuthService.getAuthHeaders(),
         body: json.encode({
           "nama": nama,
           "nik": nik,
@@ -44,7 +45,10 @@ class Balitaservice {
 
   Future<BalitaModel> GetBalitaData(int id) async {
     try {
-      final response = await http.get(Uri.parse('$base_url/balita/$id'));
+      final response = await http.get(
+        Uri.parse('$base_url/balita/$id'),
+        headers: await AuthService.getAuthHeaders(),
+      );
 
       if (response.statusCode == 200) {
         Map<String, dynamic> responseDecode = json.decode(response.body);
@@ -87,7 +91,10 @@ class Balitaservice {
   Future<List<BalitaModel>> GetAllBalita() async {
     try {
       final response = await http
-          .get(Uri.parse(base_url + '/balita'))
+          .get(
+            Uri.parse(base_url + '/balita'),
+            headers: await AuthService.getAuthHeaders(),
+          )
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
@@ -112,7 +119,10 @@ class Balitaservice {
 
   Future<void> DeleteBalita(int id) async {
     try {
-      final response = await http.delete(Uri.parse('$base_url/balita/$id'));
+      final response = await http.delete(
+        Uri.parse('$base_url/balita/$id'),
+        headers: await AuthService.getAuthHeaders(),
+      );
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -140,7 +150,7 @@ class Balitaservice {
     try {
       final response = await http.put(
         Uri.parse('$base_url/balita/$id'),
-        headers: {'Content-Type': 'application/json'},
+        headers: await AuthService.getAuthHeaders(),
         body: json.encode({
           "nama": nama,
           "nik": nik,

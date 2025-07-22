@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/presentation/screens/Pemeriksaan/From_posyandu.dart';
 import 'package:flutter_application_1/presentation/screens/Pemeriksaan/ImunisasiBalitaScreen.dart';
 import 'package:flutter_application_1/presentation/screens/Pemeriksaan/KunjunganBalitaScreen.dart';
 import 'package:flutter_application_1/presentation/screens/Daftar_Balita.dart';
@@ -217,19 +216,10 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 4,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.8,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.9,
                   children: [
-                    _buildMenuCard(
-                      icon: Icons.local_hospital,
-                      title: 'Posyandu',
-                      subtitle: 'Kelola Data',
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF6B6B), Color(0xFFEE5A24)],
-                      ),
-                      onTap: () => _navigateToAddPosyandu(),
-                    ),
                     _buildMenuCard(
                       icon: Icons.list_alt,
                       title: 'Daftar Posyandu',
@@ -259,42 +249,6 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
                           _posyanduList.isEmpty
                               ? null
                               : () => _showPosyanduSelection('kematian'),
-                    ),
-                    _buildMenuCard(
-                      icon: Icons.assessment,
-                      title: 'Laporan',
-                      subtitle: 'Lihat Laporan',
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF9F43), Color(0xFFFF7675)],
-                      ),
-                      onTap: () => _showComingSoonDialog('Laporan'),
-                    ),
-                    _buildMenuCard(
-                      icon: Icons.bar_chart,
-                      title: 'Statistik',
-                      subtitle: 'Analisis Data',
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF54A0FF), Color(0xFF2E86DE)],
-                      ),
-                      onTap: () => _showComingSoonDialog('Statistik'),
-                    ),
-                    _buildMenuCard(
-                      icon: Icons.settings,
-                      title: 'Pengaturan',
-                      subtitle: 'Konfigurasi',
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF636E72), Color(0xFF2D3436)],
-                      ),
-                      onTap: () => _showComingSoonDialog('Pengaturan'),
-                    ),
-                    _buildMenuCard(
-                      icon: Icons.info_outline,
-                      title: 'Tentang',
-                      subtitle: 'Info Aplikasi',
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF5F27CD), Color(0xFF341F97)],
-                      ),
-                      onTap: () => _showComingSoonDialog('Tentang'),
                     ),
                   ],
                 ),
@@ -386,13 +340,6 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
         ),
       ),
     );
-  }
-
-  void _navigateToAddPosyandu() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const KohortFormScreen()),
-    ).then((_) => _loadData());
   }
 
   void _showBalitaOptions() {
@@ -618,65 +565,5 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
         );
         break;
     }
-  }
-
-  void _showComingSoonDialog(String feature) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.construction, color: Colors.orange),
-                ),
-                const SizedBox(width: 12),
-                Text(feature),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.rocket_launch, size: 64, color: Colors.orange),
-                const SizedBox(height: 16),
-                Text(
-                  'Fitur $feature sedang dalam pengembangan.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Akan segera hadir! 🚀',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFF03A9F4),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-    );
   }
 }

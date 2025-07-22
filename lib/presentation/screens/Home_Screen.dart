@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/data/API/authservice.dart';
 import 'package:flutter_application_1/presentation/screens/Pemeriksaan/From_posyandu.dart';
 import 'package:flutter_application_1/presentation/screens/Daftar_Balita.dart';
+import 'package:flutter_application_1/presentation/screens/login_screen.dart';
 import 'package:flutter_application_1/presentation/screens/main_menu_screen.dart';
-import 'package:flutter_application_1/presentation/screens/Login/login_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
 import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
 import '../../data/API/PosyanduService.dart';
 import '../../data/models/posyanduModel.dart';
-import 'package:flutter_application_1/presentation/screens/Detail_Posyandu.dart';
 
+// ===================================================================
+// Widget Utama HomeScreen
+// ===================================================================
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -276,15 +278,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         onTap: () async {
-          // Navigasi ke halaman detail posyandu
-          await Navigator.push(
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => DetailPosyandu(posyandu: posyandu),
+              builder: (_) => KohortDetailScreen(posyandu: posyandu),
             ),
           );
-          // Jika ingin refresh data setelah kembali, bisa tambahkan:
-          if (mounted) _fetchPosyanduData();
+          if (result == true && mounted) {
+            _fetchPosyanduData();
+          }
         },
       ),
     );
@@ -500,7 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         const LoginBackground(),
         Scaffold(
-          backgroundColor: Colors.white.withOpacity(0.9),
+          backgroundColor: const Color.fromARGB(200, 255, 255, 255),
           appBar: _buildAppBar(),
           body:
               _isLoading

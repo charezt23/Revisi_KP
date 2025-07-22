@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/presentation/screens/Login/login_screen.dart';
 import 'package:flutter_application_1/presentation/screens/Pemeriksaan/From_posyandu.dart';
 import 'package:flutter_application_1/presentation/screens/Pemeriksaan/ImunisasiBalitaScreen.dart';
 import 'package:flutter_application_1/presentation/screens/Pemeriksaan/KunjunganBalitaScreen.dart';
@@ -174,24 +173,6 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-              const SizedBox(width: 8),
-              // Tombol Logout di header
-              Material(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-                child: InkWell(
-                  onTap: () => _showLogoutDialog(),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.logout,
-                      color: Colors.white,
-                      size: MediaQuery.of(context).size.width * 0.045,
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ],
@@ -693,80 +674,6 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
                   ),
                 ),
                 child: const Text('OK'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.logout, color: Colors.red),
-                ),
-                const SizedBox(width: 12),
-                const Text('Konfirmasi Logout'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.exit_to_app, size: 64, color: Colors.red),
-                const SizedBox(height: 16),
-                const Text(
-                  'Apakah Anda yakin ingin keluar dari aplikasi?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Anda perlu login kembali untuk mengakses aplikasi.',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(foregroundColor: Colors.grey),
-                child: const Text('Batal'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  // Logout dan kembali ke halaman login
-                  await AuthService.logout();
-                  if (mounted) {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                      (route) => false,
-                    );
-                  }
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('Logout'),
               ),
             ],
           ),

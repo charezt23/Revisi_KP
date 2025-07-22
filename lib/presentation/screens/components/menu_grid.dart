@@ -345,89 +345,100 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
   void _showBalitaOptions() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder:
-          (context) => Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF9FF3).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
+          (context) => DraggableScrollableSheet(
+            initialChildSize: 0.4,
+            maxChildSize: 0.8,
+            minChildSize: 0.3,
+            expand: false,
+            builder:
+                (context, scrollController) => Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF9FF3).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.child_care,
+                              color: Color(0xFFF368E0),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Pilihan Data Balita',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.child_care,
-                        color: Color(0xFFF368E0),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Pilihan Data Balita',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xFF03A9F4),
-                      child: Icon(Icons.all_inclusive, color: Colors.white),
-                    ),
-                    title: const Text(
-                      'Semua Balita di Posyandu',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: const Text(
-                      'Lihat semua data balita dari seluruh posyandu',
-                    ),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AllBalitaScreen(),
+                      const SizedBox(height: 16),
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: const CircleAvatar(
+                            backgroundColor: Color(0xFF03A9F4),
+                            child: Icon(
+                              Icons.all_inclusive,
+                              color: Colors.white,
+                            ),
+                          ),
+                          title: const Text(
+                            'Semua Balita di Posyandu',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: const Text(
+                            'Lihat semua data balita dari seluruh posyandu',
+                          ),
+                          trailing: const Icon(Icons.arrow_forward_ios),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AllBalitaScreen(),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
+                      ),
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: const CircleAvatar(
+                            backgroundColor: Color(0xFFF368E0),
+                            child: Icon(Icons.location_on, color: Colors.white),
+                          ),
+                          title: const Text(
+                            'Balita per Posyandu',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: const Text(
+                            'Pilih posyandu untuk melihat data balita',
+                          ),
+                          trailing: const Icon(Icons.arrow_forward_ios),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _showPosyanduSelection('balita');
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xFFF368E0),
-                      child: Icon(Icons.location_on, color: Colors.white),
-                    ),
-                    title: const Text(
-                      'Balita per Posyandu',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: const Text(
-                      'Pilih posyandu untuk melihat data balita',
-                    ),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showPosyanduSelection('balita');
-                    },
-                  ),
-                ),
-              ],
-            ),
           ),
     );
   }
@@ -454,63 +465,81 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder:
-          (context) => Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF03A9F4).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+          (context) => DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            maxChildSize: 0.9,
+            minChildSize: 0.4,
+            expand: false,
+            builder:
+                (context, scrollController) => Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF03A9F4).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.local_hospital,
+                              color: Color(0xFF03A9F4),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Pilih Posyandu - ${_getTypeTitle(type)}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.local_hospital,
-                        color: Color(0xFF03A9F4),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: ListView.builder(
+                          controller: scrollController,
+                          itemCount: _posyanduList.length,
+                          itemBuilder: (context, index) {
+                            final posyandu = _posyanduList[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                leading: const CircleAvatar(
+                                  backgroundColor: Color(0xFF03A9F4),
+                                  child: Icon(
+                                    Icons.local_hospital,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                title: Text(
+                                  posyandu.namaPosyandu,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: Text(posyandu.namaDesa),
+                                trailing: const Icon(Icons.arrow_forward_ios),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  _navigateToSelectedType(type, posyandu);
+                                },
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Pilih Posyandu - ${_getTypeTitle(type)}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ...(_posyanduList.map(
-                  (posyandu) => Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0xFF03A9F4),
-                        child: Icon(Icons.local_hospital, color: Colors.white),
-                      ),
-                      title: Text(
-                        posyandu.namaPosyandu,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(posyandu.namaDesa),
-                      trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _navigateToType(type, posyandu);
-                      },
-                    ),
+                    ],
                   ),
-                )),
-              ],
-            ),
+                ),
           ),
     );
   }
@@ -530,7 +559,7 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
     }
   }
 
-  void _navigateToType(String type, PosyanduModel posyandu) {
+  void _navigateToSelectedType(String type, PosyanduModel posyandu) {
     switch (type) {
       case 'balita':
         Navigator.push(

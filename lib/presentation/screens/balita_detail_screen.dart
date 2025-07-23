@@ -147,8 +147,8 @@ class _BalitaDetailScreenState extends State<BalitaDetailScreen> {
     final detailData = await _detailData;
     // Daftar semua jenis imunisasi yang tersedia
     final semuaJenisImunisasi = <String>[
-      'Imunisasi A',
-      'Imunisasi B',
+      'DPT',
+      'Campak',
     ]; // Ganti sesuai kebutuhan
     final jenisImunisasiBelum = getJenisImunisasiBelum(
       detailData,

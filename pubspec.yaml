@@ -30,16 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  sqflite: ^2.3.3  # Untuk database lokal
-  path_provider: ^2.1.3 # Untuk mendapatkan path database
   intl: ^0.20.2 # Untuk format tanggal
   fl_chart: ^0.68.0 # Untuk grafik pertumbuhan
-  flutter_local_notifications: ^17.1.2 # Untuk notifikasi
   google_fonts: ^6.2.1
-  # Untuk ekspor data (opsional):
-  csv: ^6.0.0
-  pdf: ^3.10.8
-  printing: ^5.12.0
   http: ^1.2.1
   flutter_localizations:
     sdk: flutter

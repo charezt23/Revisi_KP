@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_application_1/presentation/screens/components/login_background.dart';
 import 'package:flutter_application_1/presentation/screens/components/loading_indicator.dart';
 import 'package:flutter_application_1/presentation/screens/Pemeriksaan/KematianFormScreen.dart';
@@ -14,6 +15,7 @@ import '../../data/models/KunjunganBalitaModel.dart';
 import '../../data/models/kematian.dart';
 import '../../data/models/imunisasi.dart';
 import '../../data/models/balitaModel.dart';
+import '../../data/models/Zscore.dart';
 
 class PemeriksaanDetailItem {
   final DateTime tanggal;
@@ -49,6 +51,7 @@ class _DetailPemeriksaanScreenState extends State<DetailPemeriksaanScreen> {
 
   // State
   List<PemeriksaanDetailItem> _allPemeriksaan = [];
+  List<Zscore> _zscoreData = [];
   bool _isLoading = true;
   String _selectedFilter = 'Semua';
   final List<String> _filterOptions = [
@@ -75,12 +78,14 @@ class _DetailPemeriksaanScreenState extends State<DetailPemeriksaanScreen> {
         _kunjunganService.GetKunjunganbalitaByBalita(widget.balita.id!),
         _imunisasiService.getImunisasiByBalita(widget.balita.id!),
         _kematianService.getKematian(widget.balita.id!),
+        _kunjunganService.getZscore(widget.balita.id!),
       ]);
 
       final List<KunjunganModel> kunjunganList =
           results[0] as List<KunjunganModel>;
       final List<Imunisasi> imunisasiList = results[1] as List<Imunisasi>;
       final Kematian? kematian = results[2] as Kematian?;
+      final List<Zscore> zscoreList = results[3] as List<Zscore>;
 
       List<PemeriksaanDetailItem> allItems = [];
 
@@ -128,6 +133,7 @@ class _DetailPemeriksaanScreenState extends State<DetailPemeriksaanScreen> {
 
       setState(() {
         _allPemeriksaan = allItems;
+        _zscoreData = zscoreList;
         _isLoading = false;
       });
     } catch (e) {
@@ -264,21 +270,479 @@ class _DetailPemeriksaanScreenState extends State<DetailPemeriksaanScreen> {
       body: Stack(
         children: [
           const LoginBackground(),
-          Column(
-            children: [
-              _buildFilterSection(),
-              _buildStatisticsSection(),
-              Expanded(
-                child:
-                    _isLoading
-                        ? const Center(child: LoadingIndicator())
-                        : _buildPemeriksaanList(),
+          _isLoading
+              ? const Center(child: LoadingIndicator())
+              : RefreshIndicator(
+                onRefresh: _loadAllPemeriksaan,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    children: [
+                      _buildFilterSection(),
+                      _buildZScoreChartSection(),
+                      _buildStatisticsSection(),
+                      _buildPemeriksaanList(),
+                    ],
+                  ),
+                ),
               ),
-            ],
-          ),
         ],
       ),
     );
+  }
+
+  Widget _buildZScoreChartSection() {
+    if (_zscoreData.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.show_chart, color: Colors.orange.shade600),
+                const SizedBox(width: 8),
+                Text(
+                  'Grafik Pertumbuhan Z-Score',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange.shade600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.shade200),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.show_chart_outlined,
+                    size: 64,
+                    color: Colors.orange.shade300,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Belum Ada Data Z-Score',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Grafik pertumbuhan akan muncul setelah ada data kunjungan balita yang tercatat',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: Colors.orange.shade600,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Z-Score dihitung otomatis dari data kunjungan',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.show_chart, color: Colors.orange.shade600),
+              const SizedBox(width: 8),
+              Text(
+                'Grafik Pertumbuhan Z-Score',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange.shade600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Column(
+            children: [
+              Row(
+                children: [
+                  RotatedBox(
+                    quarterTurns: 3,
+                    child: Text(
+                      'Z-Score',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+
+                  Expanded(
+                    child: SizedBox(height: 300, child: _buildZScoreChart()),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Usia (bulan)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildZScoreLegend(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildZScoreChart() {
+    // Prepare data points
+    List<FlSpot> zScoreSpots = [];
+    double maxUsia = 0;
+    double minZScore = -4;
+    double maxZScore = 4;
+
+    for (int i = 0; i < _zscoreData.length; i++) {
+      final zscore = _zscoreData[i];
+      final usia = zscore.usia?.toDouble() ?? 0;
+      final zScoreValue = double.tryParse(zscore.zScore ?? '0') ?? 0;
+
+      zScoreSpots.add(FlSpot(usia, zScoreValue));
+
+      if (usia > maxUsia) maxUsia = usia;
+      if (zScoreValue < minZScore) minZScore = zScoreValue - 0.5;
+      if (zScoreValue > maxZScore) maxZScore = zScoreValue + 0.5;
+    }
+
+    // Sort spots by age
+    zScoreSpots.sort((a, b) => a.x.compareTo(b.x));
+
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: true,
+          horizontalInterval: 1,
+          verticalInterval: maxUsia > 12 ? 6 : 3,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(color: Colors.grey.shade300, strokeWidth: 1);
+          },
+          getDrawingVerticalLine: (value) {
+            return FlLine(color: Colors.grey.shade300, strokeWidth: 1);
+          },
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              interval: maxUsia > 24 ? 6 : 3,
+              getTitlesWidget: (value, meta) {
+                return SideTitleWidget(
+                  axisSide: meta.axisSide,
+                  child: Text(
+                    '${value.toInt()}',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 11,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 1,
+              reservedSize: 42,
+              getTitlesWidget: (value, meta) {
+                return SideTitleWidget(
+                  axisSide: meta.axisSide,
+                  child: Text(
+                    value == value.toInt() ? value.toInt().toString() : '',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 11,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(color: Colors.grey.shade300, width: 1),
+        ),
+        minX: 0,
+        maxX: maxUsia > 0 ? maxUsia + 2 : 24,
+        minY: minZScore,
+        maxY: maxZScore,
+        extraLinesData: ExtraLinesData(
+          horizontalLines: [
+            // Garis referensi WHO
+            HorizontalLine(
+              y: -3,
+              color: Colors.red.shade700,
+              strokeWidth: 2,
+              dashArray: [5, 5],
+            ),
+            HorizontalLine(
+              y: -2,
+              color: Colors.orange.shade600,
+              strokeWidth: 2,
+              dashArray: [5, 5],
+            ),
+            HorizontalLine(
+              y: -1,
+              color: Colors.yellow.shade700,
+              strokeWidth: 2,
+              dashArray: [5, 5],
+            ),
+            HorizontalLine(y: 0, color: Colors.green.shade600, strokeWidth: 3),
+            HorizontalLine(
+              y: 1,
+              color: Colors.yellow.shade700,
+              strokeWidth: 2,
+              dashArray: [5, 5],
+            ),
+            HorizontalLine(
+              y: 2,
+              color: Colors.orange.shade600,
+              strokeWidth: 2,
+              dashArray: [5, 5],
+            ),
+            HorizontalLine(
+              y: 3,
+              color: Colors.red.shade700,
+              strokeWidth: 2,
+              dashArray: [5, 5],
+            ),
+          ],
+        ),
+        lineBarsData: [
+          LineChartBarData(
+            spots: zScoreSpots,
+            isCurved: true,
+            color: Colors.blue.shade600,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                final zScoreValue = spot.y;
+                Color dotColor;
+
+                if (zScoreValue >= -1 && zScoreValue <= 1) {
+                  dotColor = Colors.green.shade600; // Normal
+                } else if (zScoreValue >= -2 && zScoreValue < -1 ||
+                    zScoreValue > 1 && zScoreValue <= 2) {
+                  dotColor = Colors.orange.shade600; // Perhatian
+                } else {
+                  dotColor = Colors.red.shade600; // Bahaya
+                }
+
+                return FlDotCirclePainter(
+                  radius: 6,
+                  color: dotColor,
+                  strokeWidth: 2,
+                  strokeColor: Colors.white,
+                );
+              },
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                colors: [
+                  Colors.blue.shade600.withOpacity(0.1),
+                  Colors.blue.shade600.withOpacity(0.05),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+        ],
+        lineTouchData: LineTouchData(
+          enabled: true,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+              return touchedBarSpots.map((barSpot) {
+                final usia = barSpot.x.toInt();
+                final zScore = barSpot.y.toStringAsFixed(2);
+
+                return LineTooltipItem(
+                  'Usia: $usia bulan\nZ-Score: $zScore\nStatus: ${_getFullStatusGizi(_zscoreData.firstWhere((z) => z.usia == usia).statusGizi)}',
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                );
+              }).toList();
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildZScoreLegend() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Keterangan:',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          children: [
+            _buildLegendItem('Normal (N)', Colors.green.shade600),
+            _buildLegendItem(
+              'Gizi Kurang/Lebih (GK/GL)',
+              Colors.orange.shade600,
+            ),
+            _buildLegendItem(
+              'Gizi Buruk/Obesitas (GB/OB)',
+              Colors.red.shade600,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Icon(Icons.info_outline, size: 16, color: Colors.grey.shade600),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                'Garis putus-putus menunjukkan standar WHO untuk Z-Score',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(String text, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(text, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+      ],
+    );
+  }
+
+  String _getFullStatusGizi(String? statusCode) {
+    switch (statusCode) {
+      case 'GB':
+        return 'Gizi Buruk';
+      case 'GK':
+        return 'Gizi Kurang';
+      case 'GL':
+        return 'Gizi Lebih';
+      case 'OB':
+        return 'Obesitas';
+      case 'RGL':
+        return 'Berisiko Gizi Lebih';
+      case 'N':
+        return 'Normal';
+      default:
+        return statusCode ?? 'N/A';
+    }
   }
 
   Widget _buildFilterSection() {
@@ -511,16 +975,15 @@ class _DetailPemeriksaanScreenState extends State<DetailPemeriksaanScreen> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadAllPemeriksaan,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: filteredList.length,
-        itemBuilder: (context, index) {
-          final item = filteredList[index];
-          return _buildPemeriksaanCard(item, index);
-        },
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      itemCount: filteredList.length,
+      itemBuilder: (context, index) {
+        final item = filteredList[index];
+        return _buildPemeriksaanCard(item, index);
+      },
     );
   }
 

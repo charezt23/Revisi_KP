@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_application_1/data/API/BaseURL.dart';
 import 'package:flutter_application_1/data/models/KunjunganBalitaModel.dart';
+import 'package:flutter_application_1/data/models/Zscore.dart';
 import 'package:http/http.dart' as http;
 
 class Kunjunganbalitaservice {
@@ -9,8 +10,6 @@ class Kunjunganbalitaservice {
     DateTime tanggalKunjungan,
     double beratBadan,
     double tinggiBadan,
-    String statusGizi,
-    String rambuGizi,
   ) async {
     try {
       final response = await http.post(
@@ -25,8 +24,6 @@ class Kunjunganbalitaservice {
           'tanggal_kunjungan': tanggalKunjungan.toIso8601String().split('T')[0],
           'berat_badan': beratBadan.toStringAsFixed(2),
           'tinggi_badan': tinggiBadan.toStringAsFixed(2),
-          'Status_gizi': statusGizi,
-          'rambu_gizi': rambuGizi,
         }),
       );
 
@@ -146,6 +143,44 @@ class Kunjunganbalitaservice {
     } catch (e) {
       print(e);
       return false;
+    }
+  }
+
+  Future<List<Zscore>> getZscore(int balitaId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$base_url/kunjungan-balita/zcore/$balitaId'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responDecode = json.decode(response.body);
+
+        final dynamic dataValue = responDecode['data'];
+
+        List<dynamic> dataList;
+
+        if (dataValue is List) {
+          dataList = dataValue;
+        } else if (dataValue is Map<String, dynamic>) {
+          // Jika API salah mengembalikan objek tunggal, bungkus dalam list.
+          dataList = [dataValue];
+        } else {
+          // Jika data null atau bukan list/map, kembalikan list kosong agar aman.
+          return [];
+        }
+
+        ZcoreList = dataList.map((item) => Zscore.fromJson(item)).toList();
+
+        // Kembalikan list secara langsung, jangan gunakan variabel global
+        return ZcoreList;
+      } else {
+        print('Error: ${response.reasonPhrase}');
+        // Lemparkan exception agar bisa ditangani oleh FutureBuilder di UI
+        throw Exception('Gagal memuat Z-score: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      throw Exception('Gagal terhubung ke server: $e');
     }
   }
 }

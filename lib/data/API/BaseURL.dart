@@ -1,1 +1,1 @@
-const base_url = "http://127.0.0.1:8000/api";
+const base_url = "https://1dc2f38159f6.ngrok-free.app/api";

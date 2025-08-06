@@ -1,16 +1,23 @@
-# flutter_application_1
+# 🧒 Child Cohort Register Recording App for Posyandu
 
-A new Flutter project.
+This Flutter application was developed as part of the **Final Project** for the **Internship** course.
 
-## Getting Started
+It is designed to assist village midwives in recording and monitoring child cohort data at *Posyandu* (community-based health services in Indonesia), including health check-ups, immunizations, growth, and development tracking.
 
-This project is a starting point for a Flutter application.
+## 🚀 Features
 
-A few resources to get you started if this is your first Flutter project:
+- 👶 **Child Health Data Management**
+- 💉 **Immunization Records**
+- 📈 **Growth & Z-Score Analysis**
+- 📝 **Input Forms for Check-Ups, Death Records, and More**
+- 🔐 **User Authentication** (Login & Register)
+- 📡 **API Integration** with backend services
+- ♻️ **Reusable Components** for consistent UI
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 📦 Tech Stack
+
+- [Flutter](https://flutter.dev/) 3.x
+- [Dart](https://dart.dev/) 3.x
+- RESTful API backend (integrated via service classes)
